@@ -1,0 +1,19 @@
+/**
+ * Piece Component
+ * Chess piece rendering and color logic
+ */
+
+.square.has-piece {
+  font-size: min(4rem, 7vw);
+}
+
+/* Pieces on light squares should be dark */
+.square.light.has-piece {
+  color: var(--black);
+}
+
+/* Pieces on dark squares should be light */
+.square.dark.has-piece {
+  color: var(--white);
+}
+

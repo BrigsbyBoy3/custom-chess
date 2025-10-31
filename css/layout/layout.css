@@ -1,0 +1,11 @@
+/**
+ * Layout
+ * Page structure and containers
+ */
+
+body {
+    background: var(--light);
+    min-height: 100vh;
+    display: flex;
+    padding: 1rem;
+}

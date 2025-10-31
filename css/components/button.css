@@ -1,0 +1,41 @@
+/**
+ * Button Component
+ * Base styles and variants (solid/outline)
+ */
+
+/* Base button styles */
+.btn {
+  padding: 1rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Variants */
+.btn-solid {
+  background: var(--dark);
+  color: var(--light);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--dark);
+  border: 2px solid var(--dark);
+}
+
+/* States */
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn:active {
+  opacity: 0.6;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+

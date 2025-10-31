@@ -1,0 +1,45 @@
+/**
+ * Square Component
+ * Individual board squares with color variants and states
+ */
+
+/* Base square */
+.square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+  border: 0 solid; /* Border color set by variant, width by state */
+  box-sizing: border-box;
+}
+
+/* Color variants */
+.square.light {
+  background-color: var(--white);
+  border-color: var(--black);
+  --indicator-color: var(--black);
+}
+
+.square.dark {
+  background-color: var(--black);
+  border-color: var(--white);
+  --indicator-color: var(--white);
+}
+
+/* Interactive states */
+.square:hover {
+  border-width: .25rem;
+}
+
+.square.selected {
+  border-width: .5rem;
+}
+
+.square.previous-move {
+  border-width: .5rem;
+  border-style: double;
+}
+

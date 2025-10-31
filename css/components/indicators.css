@@ -1,0 +1,36 @@
+/**
+ * Indicators Component
+ * Visual feedback for legal moves, captures, and special moves
+ */
+
+/* Base legal move indicator */
+.square.legal-move::after {
+  content: '';
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  position: absolute;
+  background-color: var(--indicator-color);
+}
+
+/* Capture slash pattern (shared) */
+.square.legal-move.has-piece::after,
+.square[data-en-passant-victim]::before {
+  content: '';
+  position: absolute;
+  width: 141.4%; /* sqrt(2) * 100% to reach corners */
+  height: .618rem;
+  border-radius: 0;
+  transform: rotate(45deg);
+  background-color: var(--indicator-color);
+}
+
+/* En passant specific - hide by default */
+.square[data-en-passant-victim]::before {
+  opacity: 0;
+}
+
+/* Show slash when hovering over en passant target square */
+.chess-board:has(.legal-move[data-en-passant-target]:hover) [data-en-passant-victim]::before {
+  opacity: 1;
+}

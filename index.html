@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Multiplayer Chess</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <kev-n col flex="1" s="1">
+    <kev-n>
+      <kev-n flex="1" justify="space-between" align="center">
+        <h1 class="text-h1">Chreess</h1>
+        <kev-n align="center" s="1">
+          <toggle-switch id="themeToggle"></toggle-switch>
+          <button id="resetBtn" class="btn btn-solid">New Game</button>
+        </kev-n>
+      </kev-n>
+    </kev-n>
+    <kev-n flex="1" justify="center">
+      <kev-n col flex="1" s="1" max-w="720px">
+        <kev-n id="board">
+          <chess-board></chess-board>
+        </kev-n>
+        <kev-n justify="center" p="1">
+          <p class="text-body1" id="statusMessage">White to move</p>
+        </kev-n>
+      </kev-n>
+    </kev-n>
+  </kev-n>
+
+  <script type="module" src="js/components/Kev.js"></script>
+  <script type="module" src="js/components/Board.js"></script>
+  <script type="module" src="js/components/ToggleSwitch.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

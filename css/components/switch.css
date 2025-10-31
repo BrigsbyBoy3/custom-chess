@@ -1,0 +1,43 @@
+/**
+ * Switch Component
+ * Theme toggle switch (binary states: 0 and 1)
+ */
+
+/* Make the component hug its contents */
+toggle-switch {
+  display: inline-block;
+}
+
+/* Switch container - clickable hitbox */
+.switch {
+  display: flex;
+  width: 3.82rem;
+  background-color: var(--dark);
+  cursor: pointer;
+  position: relative;
+  justify-content: flex-start;
+  transition: justify-content 0.2s;
+}
+
+/* Hide the actual checkbox */
+.switch input {
+  display: none;
+}
+
+/* Visible knob */
+.switch-knob {
+  width: 1rem;
+  height: 1rem;
+  margin: .5rem;
+  background-color: var(--light);
+}
+
+/* Spacer not needed with justify-content approach */
+.switch-spacer {
+  display: none;
+}
+
+/* State 1 - move knob to end */
+.switch:has(input:checked) {
+  justify-content: flex-end;
+}

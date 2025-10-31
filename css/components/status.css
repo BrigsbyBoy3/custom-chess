@@ -1,0 +1,47 @@
+/**
+ * Status Component
+ * Game state displays (turn indicator, timers, announcements)
+ */
+
+/* Turn indicator */
+.status-turn {
+  text-align: center;
+  padding: 1rem;
+}
+
+.status-turn[data-player="light"] {
+  background: var(--light);
+  color: var(--dark);
+}
+
+.status-turn[data-player="dark"] {
+  background: var(--dark);
+  color: var(--light);
+}
+
+/* Timer (future) */
+.status-timer {
+  padding: 1rem;
+}
+
+.status-timer.active {
+  background: var(--dark);
+  color: var(--light);
+}
+
+.status-timer.inactive {
+  opacity: 0.5;
+}
+
+.status-timer.low-time {
+  /* Future: pulsing animation for time pressure */
+}
+
+/* Check/Checkmate announcements (future) */
+.status-check {
+  background: var(--dark);
+  color: var(--light);
+  padding: 1rem;
+  text-align: center;
+}
+

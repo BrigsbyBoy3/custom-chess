@@ -1,0 +1,35 @@
+/**
+ * Design Tokens
+ * Single source of truth for colors and sizing
+ */
+
+:root {
+  /* Base palette (fixed chess colors) */
+  --white: #136F63;
+  --black: #031926;
+  
+  /* Semantic tokens (themeable) */
+  --light: var(--white);
+  --dark: var(--black);
+}
+
+/* Dark theme - inverts semantic tokens */
+[data-theme="dark"] {
+  --light: var(--black);
+  --dark: var(--white);
+}
+
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Responsive scaling */
+@media (max-width: 600px) {
+  html {
+    font-size: 12px;
+  }
+}
+
