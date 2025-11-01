@@ -5,12 +5,10 @@
 
 .square.has-piece {
   font-size: min(4rem, 7vw);
-  font-variant-emoji: text;
 }
 
 .square .piece {
   display: inline-block;
-  font-variant-emoji: text;
 }
 
 /* Pieces on light squares should be dark */

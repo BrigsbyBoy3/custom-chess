@@ -2,23 +2,23 @@
  * Main entry point for the chess game
  */
 
-// Chess piece Unicode symbols
+// Chess piece Unicode symbols with text variation selector to prevent emoji conversion
 const PIECES = {
   white: {
-    k: '♔',
-    q: '♕',
-    r: '♖',
-    b: '♗',
-    n: '♘',
-    p: '♙'
+    k: '♔\uFE0E',
+    q: '♕\uFE0E',
+    r: '♖\uFE0E',
+    b: '♗\uFE0E',
+    n: '♘\uFE0E',
+    p: '♙\uFE0E'
   },
   black: {
-    k: '♚',
-    q: '♛',
-    r: '♜',
-    b: '♝',
-    n: '♞',
-    p: '♟'
+    k: '♚\uFE0E',
+    q: '♛\uFE0E',
+    r: '♜\uFE0E',
+    b: '♝\uFE0E',
+    n: '♞\uFE0E',
+    p: '♟\uFE0E'
   }
 };
 
