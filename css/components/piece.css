@@ -7,6 +7,10 @@
   font-size: min(4rem, 7vw);
 }
 
+.square .piece {
+  display: inline-block;
+}
+
 /* Pieces on light squares should be dark */
 .square.light.has-piece {
   color: var(--black);
@@ -15,5 +19,27 @@
 /* Pieces on dark squares should be light */
 .square.dark.has-piece {
   color: var(--white);
+}
+
+/* King in check - show blinking slash */
+.square.king-in-check::after {
+  content: '';
+  width: 141.4%;
+  height: .618rem;
+  border-radius: 0;
+  transform: rotate(45deg);
+  background-color: var(--indicator-color);
+  position: absolute;
+  animation: blink 1s steps(1, end) infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* King in checkmate - rotate 90 degrees */
+.square.king-in-checkmate .piece {
+  transform: rotate(90deg);
 }
 

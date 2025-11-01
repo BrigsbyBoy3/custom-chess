@@ -28,6 +28,8 @@ let currentPlayer = 'white';
 let selectedSquare = null;
 let legalMoves = [];
 let lastMove = null; // Track last move for en passant
+let gameOver = false;
+let gameResult = null; // 'checkmate', 'stalemate', or null
 
 /**
  * Initialize the chess board with starting positions
@@ -47,6 +49,8 @@ function initializeBoard() {
   selectedSquare = null;
   legalMoves = [];
   lastMove = null;
+  gameOver = false;
+  gameResult = null;
 }
 
 /**
@@ -77,8 +81,21 @@ function renderBoard() {
           pieceUnicode = PIECES[piece.color][piece.type];
         }
         
-        square.textContent = pieceUnicode;
+        // Wrap piece in a span for better animation control
+        const pieceSpan = document.createElement('span');
+        pieceSpan.className = 'piece';
+        pieceSpan.textContent = pieceUnicode;
+        square.appendChild(pieceSpan);
         square.classList.add('has-piece');
+        
+        // Add visual state for king in check or checkmate
+        if (piece.type === 'k') {
+          if (gameResult === 'checkmate' && piece.color === currentPlayer) {
+            square.classList.add('king-in-checkmate');
+          } else if (isKingInCheck(piece.color)) {
+            square.classList.add('king-in-check');
+          }
+        }
       }
 
       // Highlight selected square
@@ -131,6 +148,11 @@ function renderBoard() {
  * Handle square click
  */
 function handleSquareClick(row, col) {
+  // Don't allow moves if game is over
+  if (gameOver) {
+    return;
+  }
+  
   const piece = board[row][col];
 
   // If a square is already selected
@@ -143,6 +165,7 @@ function handleSquareClick(row, col) {
       makeMove(selectedSquare.row, selectedSquare.col, row, col);
       selectedSquare = null;
       legalMoves = [];
+      updateGameInfo();
     } else if (piece && piece.color === currentPlayer) {
       // Select a different piece of the same color
       selectedSquare = { row, col };
@@ -162,7 +185,7 @@ function handleSquareClick(row, col) {
 }
 
 /**
- * Get legal moves for a piece (simplified version)
+ * Get legal moves for a piece (filtered to prevent check)
  */
 function getLegalMoves(row, col) {
   const piece = board[row][col];
@@ -191,7 +214,48 @@ function getLegalMoves(row, col) {
       break;
   }
 
-  return moves;
+  // Filter out moves that would leave the king in check
+  return moves.filter(move => !wouldMoveCauseCheck(row, col, move.row, move.col, move));
+}
+
+/**
+ * Check if a move would leave the king in check
+ */
+function wouldMoveCauseCheck(fromRow, fromCol, toRow, toCol, moveData = {}) {
+  // Save the current board state
+  const piece = board[fromRow][fromCol];
+  const capturedPiece = board[toRow][toCol];
+  const originalHasMoved = piece.hasMoved;
+  
+  // Save en passant victim if applicable
+  let enPassantVictim = null;
+  let enPassantVictimRow = null;
+  let enPassantVictimCol = null;
+  if (moveData.isEnPassant) {
+    enPassantVictimRow = fromRow;
+    enPassantVictimCol = toCol;
+    enPassantVictim = board[enPassantVictimRow][enPassantVictimCol];
+  }
+  
+  // Make the move temporarily
+  board[toRow][toCol] = piece;
+  board[fromRow][fromCol] = null;
+  if (moveData.isEnPassant) {
+    board[enPassantVictimRow][enPassantVictimCol] = null;
+  }
+  
+  // Check if king is in check after the move
+  const inCheck = isKingInCheck(piece.color);
+  
+  // Restore the board state
+  board[fromRow][fromCol] = piece;
+  board[toRow][toCol] = capturedPiece;
+  piece.hasMoved = originalHasMoved;
+  if (moveData.isEnPassant) {
+    board[enPassantVictimRow][enPassantVictimCol] = enPassantVictim;
+  }
+  
+  return inCheck;
 }
 
 /**
@@ -291,41 +355,32 @@ function getKnightMoves(row, col) {
 }
 
 /**
- * Get king moves
+ * Get king moves (with castling validation)
  */
 function getKingMoves(row, col) {
-  const moves = [];
-  const offsets = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1], [0, 1],
-    [1, -1], [1, 0], [1, 1]
-  ];
-
+  // Get basic moves first
+  const moves = getKingMovesBasic(row, col, false);
+  
   const piece = board[row][col];
-  offsets.forEach(([dr, dc]) => {
-    const newRow = row + dr;
-    const newCol = col + dc;
-    if (isValidSquare(newRow, newCol)) {
-      const targetPiece = board[newRow][newCol];
-      if (!targetPiece || targetPiece.color !== piece.color) {
-        moves.push({ row: newRow, col: newCol });
-      }
-    }
-  });
-
-  // Castling
-  if (!piece.hasMoved) {
+  const opponentColor = piece.color === 'white' ? 'black' : 'white';
+  
+  // Add castling with proper validation (can't castle through or out of check)
+  if (!piece.hasMoved && !isKingInCheck(piece.color)) {
     // Kingside castling
     const kingsideRook = board[row][7];
     if (kingsideRook && kingsideRook.type === 'r' && !kingsideRook.hasMoved &&
-        !board[row][5] && !board[row][6]) {
+        !board[row][5] && !board[row][6] &&
+        !isSquareUnderAttack(row, 5, opponentColor) &&
+        !isSquareUnderAttack(row, 6, opponentColor)) {
       moves.push({ row, col: 6, isCastling: true, rookCol: 7 });
     }
     
     // Queenside castling
     const queensideRook = board[row][0];
     if (queensideRook && queensideRook.type === 'r' && !queensideRook.hasMoved &&
-        !board[row][1] && !board[row][2] && !board[row][3]) {
+        !board[row][1] && !board[row][2] && !board[row][3] &&
+        !isSquareUnderAttack(row, 2, opponentColor) &&
+        !isSquareUnderAttack(row, 3, opponentColor)) {
       moves.push({ row, col: 2, isCastling: true, rookCol: 0 });
     }
   }
@@ -368,6 +423,149 @@ function getSlidingMoves(row, col, directions) {
  */
 function isValidSquare(row, col) {
   return row >= 0 && row <= 7 && col >= 0 && col <= 7;
+}
+
+/**
+ * Find the king's position for a given color
+ */
+function findKing(color) {
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.type === 'k' && piece.color === color) {
+        return { row, col };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if a square is under attack by a given color
+ */
+function isSquareUnderAttack(row, col, byColor) {
+  // Check all pieces of the attacking color
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const piece = board[r][c];
+      if (piece && piece.color === byColor) {
+        // Get moves for this piece (excluding castling for attack calculation)
+        const moves = getPieceMoves(r, c, piece.type, piece.color, false);
+        if (moves.some(move => move.row === row && move.col === col)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Get moves for a piece without check validation (for attack detection)
+ */
+function getPieceMoves(row, col, type, color, includeCastling = true) {
+  switch (type) {
+    case 'p':
+      return getPawnMoves(row, col, color);
+    case 'r':
+      return getRookMoves(row, col);
+    case 'n':
+      return getKnightMoves(row, col);
+    case 'b':
+      return getBishopMoves(row, col);
+    case 'q':
+      return getQueenMoves(row, col);
+    case 'k':
+      return getKingMovesBasic(row, col, includeCastling);
+    default:
+      return [];
+  }
+}
+
+/**
+ * Get basic king moves without castling (to avoid infinite recursion)
+ */
+function getKingMovesBasic(row, col, includeCastling = true) {
+  const moves = [];
+  const offsets = [
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1], [0, 1],
+    [1, -1], [1, 0], [1, 1]
+  ];
+
+  const piece = board[row][col];
+  offsets.forEach(([dr, dc]) => {
+    const newRow = row + dr;
+    const newCol = col + dc;
+    if (isValidSquare(newRow, newCol)) {
+      const targetPiece = board[newRow][newCol];
+      if (!targetPiece || targetPiece.color !== piece.color) {
+        moves.push({ row: newRow, col: newCol });
+      }
+    }
+  });
+
+  // Only add castling if requested (to avoid infinite recursion in attack check)
+  if (includeCastling && !piece.hasMoved) {
+    // Kingside castling
+    const kingsideRook = board[row][7];
+    if (kingsideRook && kingsideRook.type === 'r' && !kingsideRook.hasMoved &&
+        !board[row][5] && !board[row][6]) {
+      moves.push({ row, col: 6, isCastling: true, rookCol: 7 });
+    }
+    
+    // Queenside castling
+    const queensideRook = board[row][0];
+    if (queensideRook && queensideRook.type === 'r' && !queensideRook.hasMoved &&
+        !board[row][1] && !board[row][2] && !board[row][3]) {
+      moves.push({ row, col: 2, isCastling: true, rookCol: 0 });
+    }
+  }
+
+  return moves;
+}
+
+/**
+ * Check if the king of a given color is in check
+ */
+function isKingInCheck(color) {
+  const king = findKing(color);
+  if (!king) return false;
+  
+  const opponentColor = color === 'white' ? 'black' : 'white';
+  return isSquareUnderAttack(king.row, king.col, opponentColor);
+}
+
+/**
+ * Check if a player has any legal moves
+ */
+function hasAnyLegalMoves(color) {
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const piece = board[row][col];
+      if (piece && piece.color === color) {
+        const moves = getLegalMoves(row, col);
+        if (moves.length > 0) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Check if the current position is checkmate
+ */
+function isCheckmate(color) {
+  return isKingInCheck(color) && !hasAnyLegalMoves(color);
+}
+
+/**
+ * Check if the current position is stalemate
+ */
+function isStalemate(color) {
+  return !isKingInCheck(color) && !hasAnyLegalMoves(color);
 }
 
 /**
@@ -422,6 +620,15 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
 
   // Switch players
   currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+  
+  // Check for checkmate or stalemate
+  if (isCheckmate(currentPlayer)) {
+    gameOver = true;
+    gameResult = 'checkmate';
+  } else if (isStalemate(currentPlayer)) {
+    gameOver = true;
+    gameResult = 'stalemate';
+  }
 }
 
 /**
@@ -429,7 +636,17 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
  */
 function updateGameInfo() {
   const statusElement = document.getElementById('statusMessage');
-  statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} to move`;
+  
+  if (gameResult === 'checkmate') {
+    const winner = currentPlayer === 'white' ? 'Black' : 'White';
+    statusElement.textContent = `Checkmate! ${winner} wins!`;
+  } else if (gameResult === 'stalemate') {
+    statusElement.textContent = `Stalemate! Game is a draw.`;
+  } else if (isKingInCheck(currentPlayer)) {
+    statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} to move - Check!`;
+  } else {
+    statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} to move`;
+  }
 }
 
 /**
