@@ -12,6 +12,8 @@
 
 /* Components */
 @import './components/button.css';
+@import './components/modal.css';
+@import './components/textfield.css';
 @import './components/switch.css';
 @import './components/board.css';
 @import './components/square.css';

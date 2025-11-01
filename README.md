@@ -18,3 +18,7 @@ A clean, modern chess game for local multiplayer play. Built with vanilla JavaSc
 - Pre-moves
 - Move history
 - Captured pieces display
+
+
+Cool unicode characs:
+▚▞੦•ଠ፨⁕※⁜≡⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⌂⎌❏❂⏾❊☼⏴⏵⏶⏷⏸⏹⏺⏣⏱◔↶↷⇵◌◉◎◯●◐⚐⚑⚇⚉⛯☯☬☭☮⛻✇✕✜✧✦❍㉤🜁🜂🜃🜄⌑⌀

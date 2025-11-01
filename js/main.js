@@ -658,32 +658,28 @@ function resetGame() {
 }
 
 /**
- * Toggle theme
- */
-function toggleTheme() {
-  const isDark = document.documentElement.hasAttribute('data-theme');
-  console.log('Toggle theme - current state:', isDark ? 'dark' : 'light');
-  
-  if (isDark) {
-    document.documentElement.removeAttribute('data-theme');
-    console.log('Switched to light mode');
-  } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    console.log('Switched to dark mode');
-  }
-}
-
-/**
  * Initialize the game on page load
  */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initializeBoard();
   renderBoard();
 
   // Reset button
   document.getElementById('resetBtn').addEventListener('click', resetGame);
   
-  // Theme toggle - wire up the switch to theme logic
-  document.getElementById('themeToggle').addEventListener('toggle', toggleTheme);
+  // Theme toggle button
+  const { toggleTheme } = await import('./theme.js');
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+  
+  // Palette button - open modal
+  const paletteModal = document.getElementById('paletteModal');
+  document.getElementById('palette').addEventListener('click', () => {
+    paletteModal.open();
+  });
+  
+  // Close modal button
+  document.getElementById('closeModal').addEventListener('click', () => {
+    paletteModal.close();
+  });
 });
 

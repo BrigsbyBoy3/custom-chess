@@ -5,12 +5,16 @@
 
 /* Base button styles */
 .btn {
+  height: 3rem;
   padding: 1rem;
   border: none;
   cursor: pointer;
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Variants */
@@ -22,16 +26,27 @@
 .btn-outline {
   background: transparent;
   color: var(--dark);
-  border: 2px solid var(--dark);
+  border: .25rem solid var(--dark);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+  width: 3rem;
+  padding: 0;
+  color: var(--dark);
 }
 
 /* States */
 .btn:hover {
-  opacity: 0.8;
+  opacity: var(--hover-opacity);
+}
+
+.btn-icon:hover {
+  border: .25rem solid var(--dark);
 }
 
 .btn:active {
-  opacity: 0.6;
+  opacity: var(--hover-opacity);
 }
 
 .btn:disabled {

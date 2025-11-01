@@ -1,0 +1,33 @@
+/**
+ * Modal Component
+ * Centered overlay dialog
+ */
+
+/* Backdrop overlay */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(0, 0, 0, 0.5); */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Modal content container */
+.modal-content {
+  background: var(--light);
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+/* Prevent body scroll when modal is open */
+kev-modal[open] {
+  display: block;
+}
+

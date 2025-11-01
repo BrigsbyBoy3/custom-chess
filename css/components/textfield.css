@@ -1,0 +1,27 @@
+/**
+ * TextField Component
+ * Input field with optional label
+ */
+
+.text-field-input input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  flex: 1;
+  padding: 1rem;
+  margin: 0;
+}
+
+.text-field-input input::placeholder {
+  color: var(--dark);
+  opacity: 0.5;
+}
+
+/* Hover state */
+.text-field-input:hover {
+  opacity: var(--hover-opacity);
+}
+
