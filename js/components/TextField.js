@@ -9,10 +9,17 @@ class TextField extends HTMLElement {
     const placeholder = this.getAttribute('placeholder') || '';
     const value = this.getAttribute('value') || '';
     const name = this.getAttribute('name') || '';
+    const flex = this.getAttribute('flex');
+    
+    // Apply flex if specified
+    if (flex) {
+      this.style.display = 'flex';
+      this.style.flex = flex;
+    }
     
     // Build the structure
     this.innerHTML = `
-      <kev-n col s="0.5">
+      <kev-n col flex="1" s="0.5">
         ${label ? `<span class="text-overline">${label}</span>` : ''}
         <kev-n class="text-field-input" align="center">
           <input 

@@ -5,8 +5,8 @@
 
 :root {
   /* Base palette (fixed chess colors) */
-  --white: #136F63;
-  --black: #031926;
+  --white: #fff;
+  --black: #000;
   
   /* Semantic tokens (themeable) */
   --light: var(--white);

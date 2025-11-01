@@ -10,14 +10,7 @@
   color: inherit;
   font-family: inherit;
   font-size: inherit;
-  flex: 1;
-  padding: 1rem;
   margin: 0;
-}
-
-.text-field-input input::placeholder {
-  color: var(--dark);
-  opacity: 0.5;
 }
 
 /* Hover state */

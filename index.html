@@ -32,25 +32,15 @@
     </kev-n>
   </kev-n>
 
-  <!-- Test Modal -->
-  <kev-modal id="paletteModal">
-    <h2 class="text-h2">Palette Settings</h2>
-    <p class="text-body1">This is a test modal triggered by the palette button.</p>
-    
-    <kev-textfield label="Light Color" placeholder="Enter hex color" value="#136F63"></kev-textfield>
-    <kev-textfield label="Dark Color" placeholder="Enter hex color" value="#031926"></kev-textfield>
-    
-    <kev-n col s=".5">
-      <kev-button variant="solid">Apply</kev-button>
-      <kev-button id="closeModal" variant="outline">Close</kev-button>
-    </kev-n>
-  </kev-modal>
+  <!-- Palette Modal -->
+  <palette-modal id="paletteModal"></palette-modal>
 
   <script type="module" src="js/components/Kev.js"></script>
   <script type="module" src="js/components/Board.js"></script>
   <script type="module" src="js/components/Button.js"></script>
   <script type="module" src="js/components/Modal.js"></script>
   <script type="module" src="js/components/TextField.js"></script>
+  <script type="module" src="js/components/PaletteModal.js"></script>
   <script type="module" src="js/components/ToggleSwitch.js"></script>
   <script type="module" src="js/theme.js"></script>
   <script type="module" src="js/main.js"></script>

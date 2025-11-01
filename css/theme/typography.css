@@ -49,6 +49,12 @@
   font-weight: 400;
 }
 
+.text-overline {
+  font-size: 0.75rem;
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
 /* Base font */
 body {
   font-family: sans-serif;

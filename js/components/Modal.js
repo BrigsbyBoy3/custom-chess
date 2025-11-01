@@ -30,7 +30,7 @@ class Modal extends HTMLElement {
     const content = this.innerHTML;
     this.innerHTML = `
       <div class="modal-backdrop">
-        <kev-n class="modal-content" col b="2" p="2" s="2">
+        <kev-n class="modal-content" col b=".125" p="2" s="2">
           ${content}
         </kev-n>
       </div>

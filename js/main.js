@@ -676,10 +676,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('palette').addEventListener('click', () => {
     paletteModal.open();
   });
-  
-  // Close modal button
-  document.getElementById('closeModal').addEventListener('click', () => {
-    paletteModal.close();
-  });
 });
 
