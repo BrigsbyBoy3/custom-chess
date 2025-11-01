@@ -10,7 +10,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: color-mix(in srgb, var(--light) 60%, transparent);
+  background: color-mix(in srgb, var(--light) 90%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;

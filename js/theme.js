@@ -47,6 +47,10 @@ export function loadSavedTheme() {
   const savedTheme = localStorage.getItem('chess-theme');
   if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
+    // Fire event so ThemeIcon updates
+    document.dispatchEvent(new CustomEvent('themechange', {
+      detail: { isDark: true }
+    }));
   }
 }
 

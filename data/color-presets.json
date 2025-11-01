@@ -1,12 +1,12 @@
 [
     {
         "name": "Monochrome",
-        "light": "#FFFFFF",
-        "dark": "#000000"
+        "light": "#FFF",
+        "dark": "#000"
     },
     {
         "name": "Classic Chess",
-        "light": "#136F63",
+        "light": "#188C7C",
         "dark": "#031926"
     },
     {
@@ -15,14 +15,24 @@
         "dark": "#191716"
     },
     {
+        "name": "NCSU",
+        "light": "#fff",
+        "dark": "#c00"
+    },
+    {
+        "name": "Penguins",
+        "light": "#ffb81c",
+        "dark": "#000000"
+    },
+    {
         "name": "Haiti",
         "light": "#fb3640",
         "dark": "#0a2463"
     },
     {
         "name": "CLT",
-        "light": "#6db1bf",
-        "dark": "#301a4b"
+        "light": "#00ADCC",
+        "dark": "#240066"
     },
     {
         "name": "Royal",
@@ -36,8 +46,8 @@
     },
     {
         "name": "Grier",
-        "light": "#efb52e",
-        "dark": "#3B6E35"
+        "light": "#EFB52E",
+        "dark": "#2C5328"
     },
     {
         "name": "Frankenstein",
@@ -51,22 +61,57 @@
     },
     {
         "name": "Blood",
-        "light": "#901C14",
-        "dark": "#2D1112"
+        "light": "#B42318",
+        "dark": "#1E0B0C"
     },
     {
         "name": "Timber",
-        "light": "#467444",
-        "dark": "#14281D"
+        "light": "#599B64",
+        "dark": "#132A16"
     },
     {
         "name": "Gengar",
-        "light": "#3b3355",
-        "dark": "#000505"
+        "light": "#7466A3",
+        "dark": "#120F1A"
     },
     {
         "name": "Cool Classic",
         "light": "#fbfef9",
         "dark": "#191923"
+    },
+    {
+        "name": "USSR",
+        "light": "#ffd700",
+        "dark": "#cc0000"
+    },
+    {
+        "name": "Grass",
+        "light": "#6BAA75",
+        "dark": "#26532B"
+    },
+    {
+        "name": "Rocket Dog",
+        "light": "#A77D57",
+        "dark": "#452E21"
+    },
+    {
+        "name": "Bluey",
+        "light": "#0377DD",
+        "dark": "#010927"
+    },
+    {
+        "name": "Pumpkin",
+        "light": "#FF8D0A",
+        "dark": "#26532B"
+    },
+    {
+        "name": "Tournament",
+        "light": "#fffffc",
+        "dark": "#26532B"
+    },
+    {
+        "name": "Matrix",
+        "light": "#00ff41",
+        "dark": "#0D0208"
     }
 ]
