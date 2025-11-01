@@ -661,6 +661,11 @@ function resetGame() {
  * Initialize the game on page load
  */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load saved preferences
+  const { loadSavedTheme } = await import('./theme.js');
+  loadSavedTheme();
+  loadSavedColors();
+  
   initializeBoard();
   renderBoard();
 
@@ -677,4 +682,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     paletteModal.open();
   });
 });
+
+/**
+ * Load saved colors from localStorage
+ */
+function loadSavedColors() {
+  const savedWhite = localStorage.getItem('chess-color-white');
+  const savedBlack = localStorage.getItem('chess-color-black');
+  
+  if (savedWhite) {
+    document.documentElement.style.setProperty('--white', savedWhite);
+  }
+  if (savedBlack) {
+    document.documentElement.style.setProperty('--black', savedBlack);
+  }
+}
 

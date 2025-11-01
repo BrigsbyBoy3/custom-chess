@@ -1,0 +1,72 @@
+[
+    {
+        "name": "Monochrome",
+        "light": "#FFFFFF",
+        "dark": "#000000"
+    },
+    {
+        "name": "Classic Chess",
+        "light": "#136F63",
+        "dark": "#031926"
+    },
+    {
+        "name": "PGH",
+        "light": "#e6af2e",
+        "dark": "#191716"
+    },
+    {
+        "name": "Haiti",
+        "light": "#fb3640",
+        "dark": "#0a2463"
+    },
+    {
+        "name": "CLT",
+        "light": "#6db1bf",
+        "dark": "#301a4b"
+    },
+    {
+        "name": "Royal",
+        "light": "#f0f0c9",
+        "dark": "#124e78"
+    },
+    {
+        "name": "Ocean",
+        "light": "#f7a8bd",
+        "dark": "#1e3888"
+    },
+    {
+        "name": "Grier",
+        "light": "#efb52e",
+        "dark": "#3B6E35"
+    },
+    {
+        "name": "Frankenstein",
+        "light": "#4d8b31",
+        "dark": "#1e212b"
+    },
+    {
+        "name": "Jade",
+        "light": "#78c850",
+        "dark": "#2c503a"
+    },
+    {
+        "name": "Blood",
+        "light": "#901C14",
+        "dark": "#2D1112"
+    },
+    {
+        "name": "Timber",
+        "light": "#467444",
+        "dark": "#14281D"
+    },
+    {
+        "name": "Gengar",
+        "light": "#3b3355",
+        "dark": "#000505"
+    },
+    {
+        "name": "Cool Classic",
+        "light": "#fbfef9",
+        "dark": "#191923"
+    }
+]

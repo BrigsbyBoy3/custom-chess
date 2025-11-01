@@ -28,14 +28,26 @@ export function getThemeIcon() {
 export function toggleTheme() {
   if (isDarkTheme()) {
     document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('chess-theme', 'light');
   } else {
     document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('chess-theme', 'dark');
   }
   
   // Dispatch custom event for any listeners
   document.dispatchEvent(new CustomEvent('themechange', {
     detail: { isDark: isDarkTheme() }
   }));
+}
+
+/**
+ * Load saved theme from localStorage
+ */
+export function loadSavedTheme() {
+  const savedTheme = localStorage.getItem('chess-theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
 }
 
 /**

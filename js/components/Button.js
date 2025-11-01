@@ -9,6 +9,13 @@ class Button extends HTMLElement {
     const variant = this.getAttribute('variant') || 'solid';
     const text = this.getAttribute('text') || this.textContent;
     const type = this.getAttribute('type') || 'button';
+    const flex = this.getAttribute('flex');
+    
+    // Apply flex if specified
+    if (flex) {
+      this.style.display = 'flex';
+      this.style.flex = flex;
+    }
     
     // Apply base button classes
     this.classList.add('btn');

@@ -25,7 +25,10 @@ class PaletteModal extends HTMLElement {
           <div id="blackPreview" style="background: var(--black); height: 3rem; width: 3rem; border: var(--dark) .125rem solid"></div>
           <kev-textfield id="blackInput" flex="1" label="Black" placeholder="Enter hex color" value="${currentBlack}"></kev-textfield>
         </kev-n>
-          <kev-button id="closeBtn" variant="solid">Close</kev-button>
+        <kev-n s="1">
+          <kev-button id="randomize" variant="icon">⚄</kev-button>
+          <kev-button flex="1" id="closeBtn" variant="solid">Close</kev-button>
+        </kev-n>
       </kev-modal>
     `;
     
@@ -69,6 +72,8 @@ class PaletteModal extends HTMLElement {
         lastValidWhite = color;
         document.documentElement.style.setProperty('--white', color);
         this.whitePreview.style.background = color;
+        // Save to localStorage
+        localStorage.setItem('chess-color-white', color);
       }
     });
     
@@ -85,6 +90,8 @@ class PaletteModal extends HTMLElement {
         lastValidBlack = color;
         document.documentElement.style.setProperty('--black', color);
         this.blackPreview.style.background = color;
+        // Save to localStorage
+        localStorage.setItem('chess-color-black', color);
       }
     });
     
@@ -95,19 +102,60 @@ class PaletteModal extends HTMLElement {
     });
   }
   
-  setupButtons() {
+  async setupButtons() {
     this.querySelector('#closeBtn').addEventListener('click', () => {
       this.close();
     });
     
-    // Apply button could save to localStorage in the future
-    this.querySelector('#applyBtn').addEventListener('click', () => {
-      this.close();
+    // Randomize button - load presets and apply random one
+    this.querySelector('#randomize').addEventListener('click', async () => {
+      await this.applyRandomPreset();
     });
+  }
+  
+  async applyRandomPreset() {
+    try {
+      // Load color presets
+      const response = await fetch('data/color-presets.json');
+      const presets = await response.json();
+      
+      // Pick a random preset
+      const randomPreset = presets[Math.floor(Math.random() * presets.length)];
+      
+      // Apply to inputs and update colors
+      const whiteInputEl = this.whiteInput.querySelector('input');
+      const blackInputEl = this.blackInput.querySelector('input');
+      
+      whiteInputEl.value = randomPreset.light;
+      blackInputEl.value = randomPreset.dark;
+      
+      document.documentElement.style.setProperty('--white', randomPreset.light);
+      document.documentElement.style.setProperty('--black', randomPreset.dark);
+      
+      this.whitePreview.style.background = randomPreset.light;
+      this.blackPreview.style.background = randomPreset.dark;
+      
+      // Save to localStorage
+      localStorage.setItem('chess-color-white', randomPreset.light);
+      localStorage.setItem('chess-color-black', randomPreset.dark);
+    } catch (error) {
+      console.error('Failed to load color presets:', error);
+    }
   }
   
   // Public API
   open() {
+    // Update input values with current CSS custom properties
+    const computedStyle = getComputedStyle(document.documentElement);
+    const currentWhite = computedStyle.getPropertyValue('--white').trim();
+    const currentBlack = computedStyle.getPropertyValue('--black').trim();
+    
+    const whiteInputEl = this.whiteInput.querySelector('input');
+    const blackInputEl = this.blackInput.querySelector('input');
+    
+    whiteInputEl.value = currentWhite;
+    blackInputEl.value = currentBlack;
+    
     this.modal.open();
   }
   
