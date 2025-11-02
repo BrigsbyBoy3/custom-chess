@@ -142,8 +142,6 @@ function renderBoard() {
       boardElement.appendChild(square);
     }
   }
-
-  updateGameInfo();
 }
 
 /**
@@ -168,7 +166,6 @@ function handleSquareClick(row, col) {
       selectedSquare = null;
       legalMoves = [];
       renderBoard();
-      updateGameInfo();
       return; // Exit early to avoid rendering twice
     } else if (piece && piece.color === currentPlayer) {
       // Select a different piece of the same color
@@ -667,24 +664,6 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   } else if (isStalemate(currentPlayer)) {
     gameOver = true;
     gameResult = 'stalemate';
-  }
-}
-
-/**
- * Update game info display
- */
-function updateGameInfo() {
-  const statusElement = document.getElementById('statusMessage');
-  
-  if (gameResult === 'checkmate') {
-    const winner = currentPlayer === 'white' ? 'Black' : 'White';
-    statusElement.textContent = `Checkmate! ${winner} wins!`;
-  } else if (gameResult === 'stalemate') {
-    statusElement.textContent = `Stalemate! Game is a draw.`;
-  } else if (isKingInCheck(currentPlayer)) {
-    statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} to move - Check!`;
-  } else {
-    statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)} to move`;
   }
 }
 

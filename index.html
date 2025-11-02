@@ -10,7 +10,7 @@
 
 <body>
   <kev-n col flex="1" s="1">
-    <kev-n flex="1" justify="space-between" align="center">
+    <kev-n id="top-bar" justify="space-between" align="center">
       <h1 class="text-h1">Chreess</h1>
       <kev-n align="center" s="1">
         <kev-button id="palette" variant="icon">❏</kev-button>
@@ -18,14 +18,13 @@
         <kev-button id="resetBtn" variant="solid">New Game</kev-button>
       </kev-n>
     </kev-n>
-    <kev-n flex="1" justify="center">
-      <kev-n col flex="1" s="1" max-w="720px">
+    <kev-n justify="center">
+      <kev-n col flex="1" s="1" max-w="600px">
+        <player-info player="black"></player-info>
         <kev-n id="board">
           <chess-board></chess-board>
         </kev-n>
-        <kev-n justify="center" p="1">
-          <p class="text-body1" id="statusMessage">White to move</p>
-        </kev-n>
+        <player-info player="white"></player-info>
       </kev-n>
     </kev-n>
   </kev-n>
@@ -40,6 +39,7 @@
   <script type="module" src="js/components/TextField.js"></script>
   <script type="module" src="js/components/PaletteModal.js"></script>
   <script type="module" src="js/components/ToggleSwitch.js"></script>
+  <script type="module" src="js/components/PlayerInfo.js"></script>
   <script type="module" src="js/theme.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
