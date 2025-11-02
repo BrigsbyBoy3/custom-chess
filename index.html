@@ -13,6 +13,7 @@
     <kev-n id="top-bar" justify="space-between" align="center">
       <h1 class="text-h1">Chreess</h1>
       <kev-n align="center" s="1">
+        <kev-button id="flip-board" variant="icon">flip</kev-button>
         <kev-button id="palette" variant="icon">❏</kev-button>
         <kev-button id="themeToggle" variant="icon"><theme-icon></theme-icon></kev-button>
         <kev-button id="resetBtn" variant="solid">New Game</kev-button>
@@ -21,11 +22,11 @@
     <kev-n col>
       <kev-n justify="center" overflow="hidden">
         <kev-n col flex="1" s=".25" max-w="600px">
-          <player-info player="black"></player-info>
+          <player-info position="top"></player-info>
           <kev-n id="board">
             <chess-board></chess-board>
           </kev-n>
-          <player-info player="white"></player-info>
+          <player-info position="bottom"></player-info>
           <move-history></move-history>
         </kev-n>
       </kev-n>
@@ -42,7 +43,6 @@
   <script type="module" src="js/components/TextField.js"></script>
   <script type="module" src="js/components/PaletteModal.js"></script>
   <script type="module" src="js/components/ToggleSwitch.js"></script>
-  <script type="module" src="js/components/CaptureContainer.js"></script>
   <script type="module" src="js/components/PlayerInfo.js"></script>
   <script type="module" src="js/components/MoveHistory.js"></script>
   <script type="module" src="js/theme.js"></script>

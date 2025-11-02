@@ -1,6 +1,7 @@
 /**
  * PlayerInfo Web Component
  * Displays player name, captured pieces, and timer
+ * Dynamically determines which player to display based on position (top/bottom) and board flip state
  */
 
 class PlayerInfo extends HTMLElement {
@@ -10,49 +11,120 @@ class PlayerInfo extends HTMLElement {
     this.isEditing = false; // Track if timer is being edited
     this.gameHasStarted = false; // Track if game has started
     this.timeRemaining = 600000; // Local cache for display (read from gameState)
+    this.currentPlayer = null; // Track current player being displayed
+    this.captures = ''; // Track captures string (read from gameState)
+    this.flipObserver = null; // MutationObserver for board flip state
   }
 
   connectedCallback() {
-    const player = this.getAttribute('player') || 'white';
-    const isWhite = player === 'white';
+    const position = this.getAttribute('position') || 'bottom';
+    
+    // Determine initial player based on position
+    this.updatePlayerFromPosition();
     
     // Set ID for easy targeting
-    this.id = `player-container-${player}`;
+    this.id = `player-container-${this.currentPlayer}`;
     
     this.render();
     this.setupEventListeners();
+    this.setupFlipObserver();
+  }
+
+  /**
+   * Determine which player to display based on position and board flip state
+   * Top position shows black when not flipped, white when flipped
+   * Bottom position shows white when not flipped, black when flipped
+   */
+  updatePlayerFromPosition() {
+    const position = this.getAttribute('position') || 'bottom';
+    const boardContainer = document.getElementById('board');
+    const isFlipped = boardContainer && boardContainer.hasAttribute('data-flipped');
+    
+    if (position === 'top') {
+      this.currentPlayer = isFlipped ? 'white' : 'black';
+    } else {
+      this.currentPlayer = isFlipped ? 'black' : 'white';
+    }
+  }
+
+  /**
+   * Set up MutationObserver to watch for board flip state changes
+   */
+  setupFlipObserver() {
+    const boardContainer = document.getElementById('board');
+    if (!boardContainer) return;
+    
+    // Observe changes to the data-flipped attribute
+    this.flipObserver = new MutationObserver(() => {
+      const previousPlayer = this.currentPlayer;
+      this.updatePlayerFromPosition();
+      
+      // If player changed, update components that depend on player
+      if (previousPlayer !== this.currentPlayer) {
+        // Update player icon color
+        this.updatePlayerIcon();
+        // Update ID
+        this.id = `player-container-${this.currentPlayer}`;
+        // Re-render to update captures display and other player-specific content
+        this.render();
+      }
+    });
+    
+    this.flipObserver.observe(boardContainer, {
+      attributes: true,
+      attributeFilter: ['data-flipped']
+    });
   }
 
   render() {
-    const player = this.getAttribute('player') || 'white';
+    // Ensure player is current
+    this.updatePlayerFromPosition();
+    
+    const player = this.currentPlayer;
     const displayName = player.charAt(0).toUpperCase() + player.slice(1);
+    // Color box should match the player whose back rank is on this side of the board
+    // Top position: black when not flipped, white when flipped
+    // Bottom position: white when not flipped, black when flipped
     const playerColor = player === 'white' ? 'var(--white)' : 'var(--black)';
     
     this.innerHTML = `
       <kev-n class="player-info-container" justify="space-between" align="center" p="1" b=".25" s="1">
-        <kev-n h="3rem" w="3rem" b=".25" style="background-color: ${playerColor};"></kev-n>
-        <capture-container player="${player}"></capture-container>
+        <kev-n id="player-icon" h="3rem" w="3rem" b=".25" style="background-color: ${playerColor};"></kev-n>
+        <kev-n class="captures-display" style="display: flex; flex-wrap: wrap; flex: 1; min-width: 12rem; gap: 0.25rem; font-size: 1.5rem; align-items: center;"></kev-n>
         <kev-n class="timer-container">
           <h3 class="text-h3 timer">${this.formatTime(this.timeRemaining)}</h3>
         </kev-n>
       </kev-n>
     `;
     
-    // Request current game state to sync timer
-    window.dispatchEvent(new CustomEvent('gameStateRequest'));
-    
-    // Initialize border color based on turn (white starts first)
-    this.updateBorderColor('white');
-    // Initialize timer container styling
-    this.updateTimerContainer('white');
-    // Add click listener to timer if game hasn't started
-    this.setupTimerEdit();
+    // Wait for custom elements to be created, then sync state
+    requestAnimationFrame(() => {
+      // Request current game state to sync timer and captures
+      window.dispatchEvent(new CustomEvent('gameStateRequest'));
+      
+      // Initialize border color based on turn
+      const currentTurn = this.currentPlayer === 'white' ? 'white' : 'black';
+      this.updateBorderColor(currentTurn);
+      // Initialize timer container styling
+      this.updateTimerContainer(currentTurn);
+      // Add click listener to timer if game hasn't started
+      this.setupTimerEdit();
+      // Update player icon
+      this.updatePlayerIcon();
+      // Update captures display if we have captures
+      if (this.captures) {
+        this.updateCapturesDisplay(this.captures);
+      }
+    });
   }
 
   setupEventListeners() {
     // Listen for centralized game state updates
     window.addEventListener('gameStateUpdate', (e) => {
-      const player = this.getAttribute('player');
+      // Ensure player is current (in case flip happened)
+      this.updatePlayerFromPosition();
+      
+      const player = this.currentPlayer;
       const playerState = e.detail.players[player];
       
       // Update timer from centralized state
@@ -60,6 +132,18 @@ class PlayerInfo extends HTMLElement {
         this.timeRemaining = playerState.timer.timeRemaining;
         this.updateTimerDisplay();
       }
+      
+      // Update captures string and display
+      if (playerState) {
+        const newCaptures = playerState.captures || '';
+        if (this.captures !== newCaptures) {
+          this.captures = newCaptures;
+          this.updateCapturesDisplay(newCaptures);
+        }
+      }
+      
+      // Update player icon color based on current player
+      this.updatePlayerIcon();
       
       // Update game status
       if (e.detail.gameHasStarted) {
@@ -80,6 +164,14 @@ class PlayerInfo extends HTMLElement {
     // Listen for game reset
     window.addEventListener('gameReset', () => {
       this.reset();
+    });
+
+    // Listen for theme changes to update captures display
+    document.addEventListener('themechange', () => {
+      // Update captures display when theme changes (captures string doesn't change, just rendering)
+      if (this.captures) {
+        this.updateCapturesDisplay(this.captures);
+      }
     });
   }
 
@@ -118,14 +210,14 @@ class PlayerInfo extends HTMLElement {
     const secs = totalSeconds % 60;
     const timeString = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     
-    // Replace timer with textfield
-    timerContainer.innerHTML = `
-      <kev-textfield 
-        id="timer-edit-${this.getAttribute('player')}" 
-        value="${timeString}"
-        placeholder="MM:SS or seconds"
-      ></kev-textfield>
-    `;
+      // Replace timer with textfield
+      timerContainer.innerHTML = `
+        <kev-textfield 
+          id="timer-edit-${this.currentPlayer}" 
+          value="${timeString}"
+          placeholder="MM:SS or seconds"
+        ></kev-textfield>
+      `;
     
     // Wait for custom element to be defined
     setTimeout(() => {
@@ -191,12 +283,11 @@ class PlayerInfo extends HTMLElement {
       
       // Convert to milliseconds and update centralized state
       if (totalSeconds > 0) {
-        const player = this.getAttribute('player');
         this.timeRemaining = totalSeconds * 1000;
         // Dispatch event to update centralized state
         window.dispatchEvent(new CustomEvent('timerEdit', {
           detail: {
-            player: player,
+            player: this.currentPlayer,
             timeRemaining: this.timeRemaining
           }
         }));
@@ -233,8 +324,7 @@ class PlayerInfo extends HTMLElement {
   }
 
   updateTimerContainer(currentPlayer) {
-    const player = this.getAttribute('player') || 'white';
-    const isTurnActive = currentPlayer === player;
+    const isTurnActive = currentPlayer === this.currentPlayer;
     const timerContainer = this.querySelector('.timer-container');
     
     if (timerContainer && !this.gameResult) {
@@ -255,7 +345,6 @@ class PlayerInfo extends HTMLElement {
   }
 
   displayGameResult(result, winner) {
-    const player = this.getAttribute('player') || 'white';
     const timerEl = this.querySelector('.timer');
     const timerContainer = this.querySelector('.timer-container');
     
@@ -264,7 +353,7 @@ class PlayerInfo extends HTMLElement {
     // Determine win/lose/draw for this player
     let resultText = '';
     if (result === 'checkmate' || result === 'timeout') {
-      resultText = winner === player ? 'Win' : 'Lose';
+      resultText = winner === this.currentPlayer ? 'Win' : 'Lose';
     } else if (result === 'stalemate' || result === 'repetition') {
       resultText = 'Draw';
     }
@@ -291,8 +380,7 @@ class PlayerInfo extends HTMLElement {
   }
 
   updateBorderColor(currentPlayer) {
-    const player = this.getAttribute('player') || 'white';
-    const isTurnActive = currentPlayer === player;
+    const isTurnActive = currentPlayer === this.currentPlayer;
     const container = this.querySelector('.player-info-container');
     
     if (container) {
@@ -304,6 +392,56 @@ class PlayerInfo extends HTMLElement {
         container.style.borderColor = 'var(--light)';
       }
     }
+  }
+
+  /**
+   * Update player icon color based on current player (who is on this side of the board)
+   */
+  updatePlayerIcon() {
+    // Ensure player is current (in case flip happened)
+    this.updatePlayerFromPosition();
+    
+    const player = this.currentPlayer;
+    const playerColor = player === 'white' ? 'var(--white)' : 'var(--black)';
+    const playerIcon = this.querySelector('#player-icon');
+    
+    if (playerIcon) {
+      playerIcon.style.backgroundColor = playerColor;
+    }
+  }
+
+  /**
+   * Update captures display - converts piece types to Unicode based on player and theme
+   * White captures: light mode = black pieces (solid), dark mode = white pieces (outline)
+   * Black captures: light mode = white pieces (outline), dark mode = black pieces (solid)
+   */
+  updateCapturesDisplay(capturesString) {
+    const capturesDisplay = this.querySelector('.captures-display');
+    if (!capturesDisplay) return;
+    
+    const player = this.currentPlayer;
+    const isDarkTheme = document.documentElement.hasAttribute('data-theme');
+    
+    // Map piece types to Unicode based on player and theme
+    // White player: light mode = solid (black pieces), dark mode = outline (white pieces)
+    // Black player: light mode = outline (white pieces), dark mode = solid (black pieces)
+    const PIECES = {
+      white: { k: '♔\uFE0E', q: '♕\uFE0E', r: '♖\uFE0E', b: '♗\uFE0E', n: '♘\uFE0E', p: '♙\uFE0E' },
+      black: { k: '♚\uFE0E', q: '♛\uFE0E', r: '♜\uFE0E', b: '♝\uFE0E', n: '♞\uFE0E', p: '♟\uFE0E' }
+    };
+    
+    let useSolid;
+    if (player === 'white') {
+      useSolid = !isDarkTheme; // Light mode: solid (black pieces), dark mode: outline (white pieces)
+    } else {
+      useSolid = isDarkTheme; // Light mode: outline (white pieces), dark mode: solid (black pieces)
+    }
+    
+    const displaySet = useSolid ? PIECES.black : PIECES.white;
+    
+    // Convert piece types to Unicode characters
+    const unicodeString = capturesString.split('').map(type => displaySet[type] || '').join('');
+    capturesDisplay.textContent = unicodeString;
   }
 
   formatTime(milliseconds) {
@@ -340,7 +478,11 @@ class PlayerInfo extends HTMLElement {
   }
 
   disconnectedCallback() {
-    // Timer is managed centrally, no cleanup needed
+    // Clean up MutationObserver
+    if (this.flipObserver) {
+      this.flipObserver.disconnect();
+      this.flipObserver = null;
+    }
   }
 }
 

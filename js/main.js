@@ -46,7 +46,7 @@ const gameState = {
   players: {
     white: {
       color: 'white',
-      captures: '', // String of captured pieces (e.g., "QRBP")
+      captures: '', // String of captured piece types (e.g., "qrbp") - lowercase letters
       timer: {
         timeRemaining: 600000, // milliseconds
         timerInterval: null,
@@ -995,19 +995,26 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     
     // Add captured piece to the capturing player's string
     // Order: Q R B N P (most valuable to least, pawns at end)
-    const order = { Q: 1, R: 2, B: 3, N: 4, P: 5 };
+    // Store piece types (q, r, b, n, p) - Unicode rendering will be done in PlayerInfo based on theme
+    // Order by piece value: q r b n p (most valuable first, pawns last)
+    const order = { q: 1, r: 2, b: 3, n: 4, p: 5 };
     let currentString = gameState.players[capturingPlayer].captures || '';
     
-    // Insert in order (most valuable first, pawns last)
-    const pieces = currentString.split('').filter(p => p);
-    const newPiece = captured.type.toUpperCase();
-    const insertIndex = pieces.findIndex(p => (order[p] || 6) > order[newPiece]);
+    // Convert current string to array of piece types
+    const currentPieces = currentString.split('').filter(p => p);
+    
+    // Insert new piece in order
+    const newPieceType = captured.type;
+    const insertIndex = currentPieces.findIndex(p => (order[p] || 6) > order[newPieceType]);
+    
     if (insertIndex === -1) {
-      pieces.push(newPiece);
+      currentPieces.push(newPieceType);
     } else {
-      pieces.splice(insertIndex, 0, newPiece);
+      currentPieces.splice(insertIndex, 0, newPieceType);
     }
-    gameState.players[capturingPlayer].captures = pieces.join('');
+    
+    // Store as piece types (lowercase letters: q, r, b, n, p)
+    gameState.players[capturingPlayer].captures = currentPieces.join('');
     
     // Dispatch game state update
     dispatchGameStateUpdate();
