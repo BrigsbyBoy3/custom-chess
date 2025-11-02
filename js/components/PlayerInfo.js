@@ -9,6 +9,7 @@ class PlayerInfo extends HTMLElement {
     this.timerInterval = null;
     this.timeRemaining = 600000; // 10 minutes in milliseconds (adjust as needed)
     this.timerStartTime = null; // When the timer started
+    this.gameResult = null; // Track game result
   }
 
   connectedCallback() {
@@ -31,17 +32,26 @@ class PlayerInfo extends HTMLElement {
       <kev-n class="player-info-container" justify="space-between" align="center" p="1" b=".25" s="1">
         <kev-n h="3rem" w="3rem" b=".25" style="background-color: ${playerColor};"></kev-n>
         <capture-container player="${player}"></capture-container>
-        <h3 class="text-h3 timer">${this.formatTime(this.timeRemaining)}</h3>
+        <kev-n class="timer-container">
+          <h3 class="text-h3 timer">${this.formatTime(this.timeRemaining)}</h3>
+        </kev-n>
       </kev-n>
     `;
     
     // Initialize border color based on turn (white starts first)
     this.updateBorderColor('white');
+    // Initialize timer container styling
+    this.updateTimerContainer('white');
   }
 
   setupEventListeners() {
     // Listen for game state changes
     window.addEventListener('turnChange', (e) => {
+      // Don't start/stop timer if game is over
+      if (this.gameResult) {
+        return;
+      }
+      
       const player = this.getAttribute('player');
       if (e.detail.currentPlayer === player) {
         this.startTimer();
@@ -50,8 +60,17 @@ class PlayerInfo extends HTMLElement {
       }
       // Update border color based on turn
       this.updateBorderColor(e.detail.currentPlayer);
+      // Update timer container styling based on turn
+      this.updateTimerContainer(e.detail.currentPlayer);
     });
 
+    // Listen for game end events
+    window.addEventListener('gameEnd', (e) => {
+      this.gameResult = e.detail.result;
+      // Stop timer immediately when game ends
+      this.stopTimer();
+      this.displayGameResult(e.detail.result, e.detail.winner);
+    });
 
     // Listen for game reset
     window.addEventListener('gameReset', () => {
@@ -60,6 +79,11 @@ class PlayerInfo extends HTMLElement {
   }
 
   startTimer() {
+    // Don't start timer if game is over
+    if (this.gameResult) {
+      return;
+    }
+    
     this.stopTimer(); // Clear any existing timer
     
     // Record when timer started
@@ -67,6 +91,12 @@ class PlayerInfo extends HTMLElement {
     
     // Update every 100ms for smooth display
     this.timerInterval = setInterval(() => {
+      // Check if game is over before continuing
+      if (this.gameResult) {
+        this.stopTimer();
+        return;
+      }
+      
       const elapsed = Date.now() - this.timerStartTime;
       this.timeRemaining -= elapsed;
       this.timerStartTime = Date.now(); // Reset for next interval
@@ -94,9 +124,67 @@ class PlayerInfo extends HTMLElement {
 
   updateTimerDisplay() {
     const timerEl = this.querySelector('.timer');
-    if (timerEl) {
+    if (timerEl && !this.gameResult) {
       timerEl.textContent = this.formatTime(this.timeRemaining);
     }
+  }
+
+  updateTimerContainer(currentPlayer) {
+    const player = this.getAttribute('player') || 'white';
+    const isTurnActive = currentPlayer === player;
+    const timerContainer = this.querySelector('.timer-container');
+    
+    if (timerContainer && !this.gameResult) {
+      // During turn: dark background, light text, no border
+      // Not during turn: no background change
+      if (isTurnActive) {
+        timerContainer.style.backgroundColor = 'var(--dark)';
+        timerContainer.style.color = 'var(--light)';
+        timerContainer.style.padding = '0.5rem 1rem';
+        timerContainer.style.border = '0';
+      } else {
+        timerContainer.style.backgroundColor = 'transparent';
+        timerContainer.style.color = '';
+        timerContainer.style.padding = '0';
+        timerContainer.style.border = '0';
+      }
+    }
+  }
+
+  displayGameResult(result, winner) {
+    const player = this.getAttribute('player') || 'white';
+    const timerEl = this.querySelector('.timer');
+    const timerContainer = this.querySelector('.timer-container');
+    
+    if (!timerEl || !timerContainer) return;
+    
+    // Determine win/lose/draw for this player
+    let resultText = '';
+    if (result === 'checkmate' || result === 'timeout') {
+      resultText = winner === player ? 'Win' : 'Lose';
+    } else if (result === 'stalemate' || result === 'repetition') {
+      resultText = 'Draw';
+    }
+    
+    // Update timer text to show result
+    timerEl.textContent = resultText;
+    
+    // Style based on result
+    if (resultText === 'Win') {
+      timerContainer.style.backgroundColor = 'var(--dark)';
+      timerContainer.style.color = 'var(--light)';
+      timerContainer.style.border = 'none';
+    } else if (resultText === 'Lose') {
+      timerContainer.style.backgroundColor = 'var(--light)';
+      timerContainer.style.color = 'var(--dark)';
+      timerContainer.style.border = 'none';
+    } else if (resultText === 'Draw') {
+      timerContainer.style.backgroundColor = 'transparent';
+      timerContainer.style.border = '0.25rem solid';
+      timerContainer.style.color = 'var(--dark)';
+    }
+    
+    timerContainer.style.padding = '0.5rem 1rem';
   }
 
   updateBorderColor(currentPlayer) {
@@ -132,11 +220,14 @@ class PlayerInfo extends HTMLElement {
   reset() {
     this.stopTimer();
     this.timeRemaining = 600000; // Reset to initial time (10 minutes in milliseconds)
+    this.gameResult = null;
     
     this.updateTimerDisplay();
     
     // Reset border color to initial state (white starts first)
     this.updateBorderColor('white');
+    // Reset timer container styling
+    this.updateTimerContainer('white');
   }
 
   disconnectedCallback() {

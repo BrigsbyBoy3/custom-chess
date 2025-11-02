@@ -822,15 +822,36 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   
   // Check for checkmate, stalemate, threefold repetition, or insufficient material
   // Note: Check repetition BEFORE saving position (we want to detect if position occurred 2 times before)
+  let winner = null;
   if (isCheckmate(currentPlayer)) {
     gameOver = true;
     gameResult = 'checkmate';
+    // The winner is the player who just made the move (the one whose turn it was before switching)
+    winner = currentPlayer === 'white' ? 'black' : 'white';
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameResult,
+        winner: winner
+      }
+    }));
   } else if (isThreefoldRepetition()) {
     gameOver = true;
     gameResult = 'repetition';
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameResult,
+        winner: null // Draw - no winner
+      }
+    }));
   } else if (isStalemate(currentPlayer) || hasInsufficientMaterial()) {
     gameOver = true;
     gameResult = 'stalemate';
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameResult,
+        winner: null // Draw - no winner
+      }
+    }));
   }
   
   // Save current position to history (after the move and player switch)
@@ -847,6 +868,46 @@ function resetGame() {
   
   // Dispatch game reset event
   window.dispatchEvent(new CustomEvent('gameReset'));
+}
+
+/**
+ * Handle time's up event
+ */
+function handleTimeUp(playerWhoRanOut) {
+  // Don't handle if game is already over
+  if (gameOver) {
+    return;
+  }
+  
+  // The winner is the player who DIDN'T run out of time
+  const winner = playerWhoRanOut === 'white' ? 'black' : 'white';
+  
+  // Check if winner has insufficient material (if so, it's a draw)
+  // We need to check this before declaring a winner
+  // Create a temporary board state where we swap to the winner's perspective
+  // Actually, hasInsufficientMaterial checks both sides, so we just need to check it
+  
+  // If there's insufficient material, it's a draw regardless of time
+  if (hasInsufficientMaterial()) {
+    gameOver = true;
+    gameResult = 'stalemate';
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameResult,
+        winner: null // Draw - no winner
+      }
+    }));
+  } else {
+    // Winner by time
+    gameOver = true;
+    gameResult = 'timeout';
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameResult,
+        winner: winner
+      }
+    }));
+  }
 }
 
 /**
@@ -872,6 +933,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const paletteModal = document.getElementById('paletteModal');
   document.getElementById('palette').addEventListener('click', () => {
     paletteModal.open();
+  });
+  
+  // Listen for time's up event
+  window.addEventListener('timeUp', (e) => {
+    handleTimeUp(e.detail.player);
   });
 });
 
