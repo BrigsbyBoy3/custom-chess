@@ -6,12 +6,13 @@
 class CaptureContainer extends HTMLElement {
   constructor() {
     super();
-    this.capturedPieces = []; // Array of {type, color} objects
   }
 
   connectedCallback() {
     this.render();
     this.setupEventListeners();
+    // Request current state and update display
+    window.dispatchEvent(new CustomEvent('gameStateRequest'));
     this.updatePieceDisplay(); // Update display based on current theme
   }
 
@@ -25,14 +26,11 @@ class CaptureContainer extends HTMLElement {
   }
 
   setupEventListeners() {
-    // Listen for piece captures
-    window.addEventListener('pieceCaptured', (e) => {
+    // Listen for centralized game state updates
+    window.addEventListener('gameStateUpdate', (e) => {
       const player = this.getAttribute('player');
-      // If a white piece was captured, black gets it
-      // If a black piece was captured, white gets it
-      if (e.detail.capturedBy === player) {
-        this.addCapturedPiece(e.detail.pieceType, e.detail.pieceColor);
-      }
+      const captures = e.detail.players[player].captures || '';
+      this.updateFromGameState(captures);
     });
 
     // Listen for theme changes
@@ -46,22 +44,33 @@ class CaptureContainer extends HTMLElement {
     });
   }
 
-  addCapturedPiece(pieceType, pieceColor) {
-    // Store piece metadata
-    this.capturedPieces.push({ type: pieceType, color: pieceColor });
+  /**
+   * Update display from centralized game state
+   * @param {string} captures - String of captured pieces (e.g., "QRBP")
+   */
+  updateFromGameState(captures) {
+    // Clear existing pieces
+    this.innerHTML = '';
     
-    // Create span and add to DOM
-    const pieceSpan = document.createElement('span');
-    pieceSpan.dataset.pieceType = pieceType;
-    pieceSpan.dataset.pieceColor = pieceColor;
-    pieceSpan.style.fontSize = '1.5rem';
-    pieceSpan.style.width = '1.5rem';
-    pieceSpan.style.height = '1.5rem';
-    pieceSpan.style.display = 'flex';
-    pieceSpan.style.alignItems = 'center';
-    pieceSpan.style.justifyContent = 'center';
+    // Map piece symbols to piece types
+    const pieceMap = { 'Q': 'q', 'R': 'r', 'B': 'b', 'N': 'n', 'P': 'p' };
     
-    this.appendChild(pieceSpan);
+    // Create spans for each captured piece
+    for (const symbol of captures) {
+      const pieceType = pieceMap[symbol];
+      if (pieceType) {
+        const pieceSpan = document.createElement('span');
+        pieceSpan.dataset.pieceType = pieceType;
+        pieceSpan.style.fontSize = '1.5rem';
+        pieceSpan.style.width = '1.5rem';
+        pieceSpan.style.height = '1.5rem';
+        pieceSpan.style.display = 'flex';
+        pieceSpan.style.alignItems = 'center';
+        pieceSpan.style.justifyContent = 'center';
+        
+        this.appendChild(pieceSpan);
+      }
+    }
     
     // Update display based on current theme
     this.updatePieceDisplay();
@@ -98,7 +107,6 @@ class CaptureContainer extends HTMLElement {
 
   reset() {
     this.innerHTML = '';
-    this.capturedPieces = [];
     // Re-apply styles after clearing
     this.render();
   }

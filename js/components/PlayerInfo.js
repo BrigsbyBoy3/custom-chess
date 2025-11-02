@@ -6,12 +6,10 @@
 class PlayerInfo extends HTMLElement {
   constructor() {
     super();
-    this.timerInterval = null;
-    this.timeRemaining = 600000; // 10 minutes in milliseconds (adjust as needed)
-    this.timerStartTime = null; // When the timer started
     this.gameResult = null; // Track game result
     this.isEditing = false; // Track if timer is being edited
     this.gameHasStarted = false; // Track if game has started
+    this.timeRemaining = 600000; // Local cache for display (read from gameState)
   }
 
   connectedCallback() {
@@ -40,6 +38,9 @@ class PlayerInfo extends HTMLElement {
       </kev-n>
     `;
     
+    // Request current game state to sync timer
+    window.dispatchEvent(new CustomEvent('gameStateRequest'));
+    
     // Initialize border color based on turn (white starts first)
     this.updateBorderColor('white');
     // Initialize timer container styling
@@ -49,33 +50,30 @@ class PlayerInfo extends HTMLElement {
   }
 
   setupEventListeners() {
-    // Listen for game state changes
-    window.addEventListener('turnChange', (e) => {
-      // Mark that game has started
-      this.gameHasStarted = true;
-      
-      // Don't start/stop timer if game is over
-      if (this.gameResult) {
-        return;
-      }
-      
+    // Listen for centralized game state updates
+    window.addEventListener('gameStateUpdate', (e) => {
       const player = this.getAttribute('player');
-      if (e.detail.currentPlayer === player) {
-        this.startTimer();
-      } else {
-        this.stopTimer();
+      const playerState = e.detail.players[player];
+      
+      // Update timer from centralized state
+      if (playerState && playerState.timer) {
+        this.timeRemaining = playerState.timer.timeRemaining;
+        this.updateTimerDisplay();
       }
-      // Update border color based on turn
-      this.updateBorderColor(e.detail.currentPlayer);
-      // Update timer container styling based on turn
-      this.updateTimerContainer(e.detail.currentPlayer);
+      
+      // Update game status
+      if (e.detail.gameHasStarted) {
+        this.gameHasStarted = true;
+      }
+      
+      // Update border and timer container based on turn
+      this.updateBorderColor(e.detail.turn);
+      this.updateTimerContainer(e.detail.turn);
     });
 
     // Listen for game end events
     window.addEventListener('gameEnd', (e) => {
       this.gameResult = e.detail.result;
-      // Stop timer immediately when game ends
-      this.stopTimer();
       this.displayGameResult(e.detail.result, e.detail.winner);
     });
 
@@ -107,6 +105,7 @@ class PlayerInfo extends HTMLElement {
     
     this.isEditing = true;
     const timerContainer = this.querySelector('.timer-container');
+    // Use current time from state
     const currentTime = this.timeRemaining;
     
     // Remove background color while editing for better visibility
@@ -190,9 +189,17 @@ class PlayerInfo extends HTMLElement {
         totalSeconds = parseInt(inputValue, 10) || 0;
       }
       
-      // Convert to milliseconds and update
+      // Convert to milliseconds and update centralized state
       if (totalSeconds > 0) {
+        const player = this.getAttribute('player');
         this.timeRemaining = totalSeconds * 1000;
+        // Dispatch event to update centralized state
+        window.dispatchEvent(new CustomEvent('timerEdit', {
+          detail: {
+            player: player,
+            timeRemaining: this.timeRemaining
+          }
+        }));
         this.updateTimerDisplay();
       }
     }
@@ -216,50 +223,6 @@ class PlayerInfo extends HTMLElement {
     this.setupTimerEdit();
     // Restore timer container styling
     this.updateTimerContainer('white');
-  }
-
-  startTimer() {
-    // Don't start timer if game is over
-    if (this.gameResult) {
-      return;
-    }
-    
-    this.stopTimer(); // Clear any existing timer
-    
-    // Record when timer started
-    this.timerStartTime = Date.now();
-    
-    // Update every 100ms for smooth display
-    this.timerInterval = setInterval(() => {
-      // Check if game is over before continuing
-      if (this.gameResult) {
-        this.stopTimer();
-        return;
-      }
-      
-      const elapsed = Date.now() - this.timerStartTime;
-      this.timeRemaining -= elapsed;
-      this.timerStartTime = Date.now(); // Reset for next interval
-      
-      if (this.timeRemaining <= 0) {
-        this.timeRemaining = 0;
-        this.stopTimer();
-        // Dispatch time's up event
-        window.dispatchEvent(new CustomEvent('timeUp', {
-          detail: { player: this.getAttribute('player') }
-        }));
-      }
-      
-      this.updateTimerDisplay();
-    }, 100); // Update 10 times per second
-  }
-
-  stopTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-      this.timerStartTime = null;
-    }
   }
 
   updateTimerDisplay() {
@@ -358,11 +321,13 @@ class PlayerInfo extends HTMLElement {
   }
 
   reset() {
-    this.stopTimer();
-    this.timeRemaining = 600000; // Reset to initial time (10 minutes in milliseconds)
+    this.timeRemaining = 600000; // Reset local cache (will be updated from gameState)
     this.gameResult = null;
     this.gameHasStarted = false;
     this.isEditing = false;
+    
+    // Request updated state
+    window.dispatchEvent(new CustomEvent('gameStateRequest'));
     
     this.updateTimerDisplay();
     
@@ -375,7 +340,7 @@ class PlayerInfo extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.stopTimer();
+    // Timer is managed centrally, no cleanup needed
   }
 }
 

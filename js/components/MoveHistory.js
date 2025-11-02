@@ -13,6 +13,8 @@ class MoveHistory extends HTMLElement {
   connectedCallback() {
     this.render();
     this.setupEventListeners();
+    // Request current game state to sync move history
+    window.dispatchEvent(new CustomEvent('gameStateRequest'));
   }
 
   render() {
@@ -35,7 +37,26 @@ class MoveHistory extends HTMLElement {
   }
 
   setupEventListeners() {
-    // Listen for moves
+    // Listen for centralized game state updates
+    window.addEventListener('gameStateUpdate', (e) => {
+      // Sync move history from centralized state
+      // Note: We still listen to moveMade for immediate updates, but this ensures sync
+      // The moveMade event will update this.moves immediately, so we don't need to duplicate here
+      // But we can update gameResult from state
+      if (e.detail.gameResult) {
+        this.gameResult = e.detail.gameResult;
+        if (e.detail.gameResult === 'checkmate') {
+          // Update the last move to add # (checkmate symbol)
+          if (this.moves.length > 0) {
+            const lastMove = this.moves[this.moves.length - 1];
+            lastMove.isCheckmate = true;
+            this.updateDisplay();
+          }
+        }
+      }
+    });
+
+    // Listen for moves (primary source of move updates)
     window.addEventListener('moveMade', (e) => {
       this.addMove(e.detail);
     });
@@ -206,9 +227,12 @@ class MoveHistory extends HTMLElement {
   }
 
   reset() {
+    // Clear local move history - it will be rebuilt from centralized state
     this.moves = [];
     this.gameResult = null;
     this.updateDisplay();
+    // Request updated state after reset
+    window.dispatchEvent(new CustomEvent('gameStateRequest'));
   }
 }
 
