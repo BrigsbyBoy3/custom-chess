@@ -25,14 +25,18 @@ class PlayerInfo extends HTMLElement {
   render() {
     const player = this.getAttribute('player') || 'white';
     const displayName = player.charAt(0).toUpperCase() + player.slice(1);
+    const playerColor = player === 'white' ? 'var(--white)' : 'var(--black)';
     
     this.innerHTML = `
-      <kev-n justify="space-between" align="center" p="1" b=".25" s="1">
-        <p class="text-h5 player-name">${displayName}</p>
-        <kev-n class="capture-container" flex="1" s=".5" style="padding-left: 1rem;"></kev-n>
+      <kev-n class="player-info-container" justify="space-between" align="center" p="1" b=".25" s="1">
+        <kev-n h="3rem" w="3rem" b=".25" style="background-color: ${playerColor};"></kev-n>
+        <capture-container player="${player}"></capture-container>
         <h3 class="text-h3 timer">${this.formatTime(this.timeRemaining)}</h3>
       </kev-n>
     `;
+    
+    // Initialize border color based on turn (white starts first)
+    this.updateBorderColor('white');
   }
 
   setupEventListeners() {
@@ -44,17 +48,10 @@ class PlayerInfo extends HTMLElement {
       } else {
         this.stopTimer();
       }
+      // Update border color based on turn
+      this.updateBorderColor(e.detail.currentPlayer);
     });
 
-    // Listen for piece captures
-    window.addEventListener('pieceCaptured', (e) => {
-      const player = this.getAttribute('player');
-      // If a white piece was captured, black gets it
-      // If a black piece was captured, white gets it
-      if (e.detail.capturedBy === player) {
-        this.addCapturedPiece(e.detail.piece);
-      }
-    });
 
     // Listen for game reset
     window.addEventListener('gameReset', () => {
@@ -102,6 +99,22 @@ class PlayerInfo extends HTMLElement {
     }
   }
 
+  updateBorderColor(currentPlayer) {
+    const player = this.getAttribute('player') || 'white';
+    const isTurnActive = currentPlayer === player;
+    const container = this.querySelector('.player-info-container');
+    
+    if (container) {
+      // When it's NOT their turn, border should be light (invisible)
+      // When it IS their turn, border should be dark (visible)
+      if (isTurnActive) {
+        container.style.borderColor = 'var(--dark)';
+      } else {
+        container.style.borderColor = 'var(--light)';
+      }
+    }
+  }
+
   formatTime(milliseconds) {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const mins = Math.floor(totalSeconds / 60);
@@ -116,27 +129,14 @@ class PlayerInfo extends HTMLElement {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
-  addCapturedPiece(piece) {
-    const container = this.querySelector('.capture-container');
-    if (container) {
-      const pieceSpan = document.createElement('span');
-      pieceSpan.textContent = piece;
-      pieceSpan.style.fontSize = '1.25rem';
-      container.appendChild(pieceSpan);
-    }
-  }
-
   reset() {
     this.stopTimer();
     this.timeRemaining = 600000; // Reset to initial time (10 minutes in milliseconds)
     
-    // Clear captured pieces
-    const container = this.querySelector('.capture-container');
-    if (container) {
-      container.innerHTML = '';
-    }
-    
     this.updateTimerDisplay();
+    
+    // Reset border color to initial state (white starts first)
+    this.updateBorderColor('white');
   }
 
   disconnectedCallback() {

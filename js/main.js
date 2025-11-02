@@ -617,18 +617,18 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
 
   // Dispatch capture event if a piece was captured
   if (capturedPiece) {
-    const pieceUnicode = PIECES[capturedPiece.color][capturedPiece.type];
     window.dispatchEvent(new CustomEvent('pieceCaptured', {
       detail: {
-        piece: pieceUnicode,
+        pieceType: capturedPiece.type,
+        pieceColor: capturedPiece.color,
         capturedBy: currentPlayer // The current player (before switch) captured this piece
       }
     }));
   } else if (enPassantCapture) {
-    const pieceUnicode = PIECES[enPassantCapture.color][enPassantCapture.type];
     window.dispatchEvent(new CustomEvent('pieceCaptured', {
       detail: {
-        piece: pieceUnicode,
+        pieceType: enPassantCapture.type,
+        pieceColor: enPassantCapture.color,
         capturedBy: currentPlayer
       }
     }));
