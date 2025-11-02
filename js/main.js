@@ -794,8 +794,16 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const move = legalMoves.find(m => m.row === toRow && m.col === toCol);
   
+  // Capture piece type/color BEFORE making move (before promotion changes piece.type)
+  // This ensures historical moves show correct piece type
+  const pieceTypeAtMove = piece.type;
+  const pieceColorAtMove = piece.color;
+  
   // Check for ambiguous moves BEFORE making the move (need current board state)
   const ambiguousPieces = findAmbiguousPieces(piece.type, piece.color, fromRow, fromCol, toRow, toCol);
+  
+  // Check for promotion BEFORE making the move (piece.type will change after)
+  const isPromotion = piece.type === 'p' && (toRow === 0 || toRow === 7);
   
   // Check for captures
   const capturedPiece = board[toRow][toCol];
@@ -831,7 +839,7 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     piece.hasMoved = true;
 
     // Pawn promotion (auto-promote to queen)
-    if (piece.type === 'p' && (toRow === 0 || toRow === 7)) {
+    if (isPromotion) {
       board[toRow][toCol].type = 'q';
     }
   }
@@ -871,14 +879,15 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   const opponentColor = currentPlayer === 'white' ? 'black' : 'white';
   const putsInCheck = isKingInCheck(opponentColor);
   
-  // Check if promotion occurred
-  const promotedPiece = (piece.type === 'p' && (toRow === 0 || toRow === 7)) ? 'q' : null;
+  // Determine promoted piece (if promotion occurred)
+  const promotedPiece = isPromotion ? 'q' : null;
   
   // Dispatch move made event (before switching players)
   const movePlayer = currentPlayer; // The player who made this move
+  
   window.dispatchEvent(new CustomEvent('moveMade', {
     detail: {
-      piece: piece,
+      piece: { type: pieceTypeAtMove, color: pieceColorAtMove }, // Snapshot, not reference
       fromRow: fromRow,
       fromCol: fromCol,
       toRow: toRow,
