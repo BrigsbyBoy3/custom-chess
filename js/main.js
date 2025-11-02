@@ -62,6 +62,8 @@ function initializeBoard() {
  */
 function renderBoard() {
   const boardElement = document.getElementById('chessBoard');
+  if (!boardElement) return;
+  
   boardElement.innerHTML = '';
 
   for (let row = 0; row < 8; row++) {
@@ -139,10 +141,24 @@ function renderBoard() {
         }
       }
 
-      square.addEventListener('click', () => handleSquareClick(row, col));
-
       boardElement.appendChild(square);
     }
+  }
+  
+  // Use event delegation - attach listener to board container (only once)
+  if (!boardElement.dataset.listenerAttached) {
+    boardElement.addEventListener('click', (e) => {
+      // Find the square element that was clicked
+      const square = e.target.closest('.square');
+      if (square) {
+        const row = parseInt(square.dataset.row);
+        const col = parseInt(square.dataset.col);
+        if (!isNaN(row) && !isNaN(col)) {
+          handleSquareClick(row, col);
+        }
+      }
+    });
+    boardElement.dataset.listenerAttached = 'true';
   }
 }
 
@@ -167,7 +183,10 @@ function handleSquareClick(row, col) {
       makeMove(selectedSquare.row, selectedSquare.col, row, col);
       selectedSquare = null;
       legalMoves = [];
-      renderBoard();
+      // Defer rendering to next frame to ensure click event fully processes first
+      requestAnimationFrame(() => {
+        renderBoard();
+      });
       return; // Exit early to avoid rendering twice
     } else if (piece && piece.color === currentPlayer) {
       // Select a different piece of the same color
@@ -184,7 +203,10 @@ function handleSquareClick(row, col) {
     legalMoves = getLegalMoves(row, col);
   }
 
-  renderBoard();
+  // Defer rendering to next frame to ensure click event fully processes first
+  requestAnimationFrame(() => {
+    renderBoard();
+  });
 }
 
 /**
@@ -1018,4 +1040,5 @@ function loadSavedColors() {
     document.documentElement.style.setProperty('--black', savedBlack);
   }
 }
+
 
