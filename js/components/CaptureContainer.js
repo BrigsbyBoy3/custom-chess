@@ -21,7 +21,7 @@ class CaptureContainer extends HTMLElement {
     this.style.flexWrap = 'wrap';
     this.style.flex = '1';
     this.style.minWidth = '12rem';
-    this.style.gap = '0';
+    this.style.gap = '.25rem';
   }
 
   setupEventListeners() {

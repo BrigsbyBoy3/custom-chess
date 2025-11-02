@@ -19,15 +19,16 @@
       </kev-n>
     </kev-n>
     <kev-n col>
-    <kev-n justify="center">
-      <kev-n col flex="1" s=".25" max-w="600px">
-        <player-info player="black"></player-info>
-        <kev-n id="board">
-          <chess-board></chess-board>
+      <kev-n justify="center" overflow="hidden">
+        <kev-n col flex="1" s=".25" max-w="600px">
+          <player-info player="black"></player-info>
+          <kev-n id="board">
+            <chess-board></chess-board>
+          </kev-n>
+          <player-info player="white"></player-info>
+          <move-history></move-history>
         </kev-n>
-        <player-info player="white"></player-info>
       </kev-n>
-    </kev-n>
     </kev-n>
   </kev-n>
 
@@ -43,6 +44,7 @@
   <script type="module" src="js/components/ToggleSwitch.js"></script>
   <script type="module" src="js/components/CaptureContainer.js"></script>
   <script type="module" src="js/components/PlayerInfo.js"></script>
+  <script type="module" src="js/components/MoveHistory.js"></script>
   <script type="module" src="js/theme.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>

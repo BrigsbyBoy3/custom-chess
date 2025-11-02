@@ -529,6 +529,39 @@ function getKingMovesBasic(row, col, includeCastling = true) {
 }
 
 /**
+ * Find other pieces of the same type that could reach the same square (for disambiguation)
+ */
+function findAmbiguousPieces(pieceType, pieceColor, fromRow, fromCol, toRow, toCol) {
+  const ambiguous = [];
+  
+  // Don't check for ambiguity for pawns (handled by file in captures) or kings (only one king)
+  if (pieceType === 'p' || pieceType === 'k') {
+    return ambiguous;
+  }
+  
+  // Check all pieces of the same type and color
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      // Skip the piece that's actually making the move
+      if (row === fromRow && col === fromCol) {
+        continue;
+      }
+      
+      const otherPiece = board[row][col];
+      if (otherPiece && otherPiece.type === pieceType && otherPiece.color === pieceColor) {
+        // Check if this piece could also reach the destination square
+        const legalMoves = getLegalMoves(row, col);
+        if (legalMoves.some(m => m.row === toRow && m.col === toCol)) {
+          ambiguous.push({ row, col });
+        }
+      }
+    }
+  }
+  
+  return ambiguous;
+}
+
+/**
  * Check if the king of a given color is in check
  */
 function isKingInCheck(color) {
@@ -739,6 +772,9 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const move = legalMoves.find(m => m.row === toRow && m.col === toCol);
   
+  // Check for ambiguous moves BEFORE making the move (need current board state)
+  const ambiguousPieces = findAmbiguousPieces(piece.type, piece.color, fromRow, fromCol, toRow, toCol);
+  
   // Check for captures
   const capturedPiece = board[toRow][toCol];
   let enPassantCapture = null;
@@ -808,6 +844,33 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
 
   // Increment move count
   moveCount++;
+  
+  // Check if this move puts the opponent in check (before switching players)
+  const opponentColor = currentPlayer === 'white' ? 'black' : 'white';
+  const putsInCheck = isKingInCheck(opponentColor);
+  
+  // Check if promotion occurred
+  const promotedPiece = (piece.type === 'p' && (toRow === 0 || toRow === 7)) ? 'q' : null;
+  
+  // Dispatch move made event (before switching players)
+  const movePlayer = currentPlayer; // The player who made this move
+  window.dispatchEvent(new CustomEvent('moveMade', {
+    detail: {
+      piece: piece,
+      fromRow: fromRow,
+      fromCol: fromCol,
+      toRow: toRow,
+      toCol: toCol,
+      player: movePlayer,
+      moveNumber: moveCount,
+      isCastling: move && move.isCastling,
+      isEnPassant: move && move.isEnPassant,
+      isCapture: !!(capturedPiece || enPassantCapture),
+      promotedPiece: promotedPiece,
+      putsInCheck: putsInCheck,
+      ambiguousPieces: ambiguousPieces // Array of {row, col} for other pieces that could reach toSquare
+    }
+  }));
   
   // Switch players
   currentPlayer = currentPlayer === 'white' ? 'black' : 'white';

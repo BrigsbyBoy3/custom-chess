@@ -1,0 +1,38 @@
+/**
+ * Move History Component
+ * Table display of chess moves in algebraic notation
+ */
+
+.move-history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.move-history-table thead {
+  border-bottom: 0.25rem solid var(--dark);
+}
+
+.move-history-table th {
+  text-align: left;
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+.move-history-table th:first-child {
+  width: 3rem;
+  text-align: center;
+}
+
+.move-history-table tbody tr {
+  border-bottom: 0.125rem solid var(--light);
+}
+
+.move-history-table td {
+  padding: 0.5rem;
+}
+
+.move-history-table td:first-child {
+  text-align: center;
+  font-weight: 500;
+}
+
