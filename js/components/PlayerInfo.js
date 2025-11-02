@@ -10,6 +10,8 @@ class PlayerInfo extends HTMLElement {
     this.timeRemaining = 600000; // 10 minutes in milliseconds (adjust as needed)
     this.timerStartTime = null; // When the timer started
     this.gameResult = null; // Track game result
+    this.isEditing = false; // Track if timer is being edited
+    this.gameHasStarted = false; // Track if game has started
   }
 
   connectedCallback() {
@@ -42,11 +44,16 @@ class PlayerInfo extends HTMLElement {
     this.updateBorderColor('white');
     // Initialize timer container styling
     this.updateTimerContainer('white');
+    // Add click listener to timer if game hasn't started
+    this.setupTimerEdit();
   }
 
   setupEventListeners() {
     // Listen for game state changes
     window.addEventListener('turnChange', (e) => {
+      // Mark that game has started
+      this.gameHasStarted = true;
+      
       // Don't start/stop timer if game is over
       if (this.gameResult) {
         return;
@@ -76,6 +83,139 @@ class PlayerInfo extends HTMLElement {
     window.addEventListener('gameReset', () => {
       this.reset();
     });
+  }
+
+  setupTimerEdit() {
+    const timerEl = this.querySelector('.timer');
+    const timerContainer = this.querySelector('.timer-container');
+    
+    if (timerEl && timerContainer && !this.gameHasStarted && !this.gameResult) {
+      // Make timer clickable before game starts
+      timerContainer.style.cursor = 'pointer';
+      timerEl.style.cursor = 'pointer';
+      
+      timerContainer.addEventListener('click', () => {
+        if (!this.gameHasStarted && !this.gameResult && !this.isEditing) {
+          this.startEditTimer();
+        }
+      });
+    }
+  }
+
+  startEditTimer() {
+    if (this.isEditing) return;
+    
+    this.isEditing = true;
+    const timerContainer = this.querySelector('.timer-container');
+    const currentTime = this.timeRemaining;
+    
+    // Remove background color while editing for better visibility
+    timerContainer.style.backgroundColor = 'transparent';
+    timerContainer.style.color = '';
+    
+    // Convert milliseconds to MM:SS format for display
+    const totalSeconds = Math.floor(currentTime / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const timeString = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    
+    // Replace timer with textfield
+    timerContainer.innerHTML = `
+      <kev-textfield 
+        id="timer-edit-${this.getAttribute('player')}" 
+        value="${timeString}"
+        placeholder="MM:SS or seconds"
+      ></kev-textfield>
+    `;
+    
+    // Wait for custom element to be defined
+    setTimeout(() => {
+      const textField = timerContainer.querySelector('kev-textfield');
+      if (textField) {
+        const input = textField.querySelector('input');
+        if (input) {
+          input.focus();
+          input.select(); // Select all text for easy editing
+          
+          // Handle Enter key to submit
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              this.submitTimerEdit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              this.cancelTimerEdit();
+            }
+          });
+          
+          // Handle blur to submit (clicking away)
+          input.addEventListener('blur', () => {
+            // Small delay to allow Enter key handler to fire first
+            setTimeout(() => {
+              if (this.isEditing) {
+                this.submitTimerEdit();
+              }
+            }, 100);
+          });
+        }
+      }
+    }, 0);
+  }
+
+  submitTimerEdit() {
+    if (!this.isEditing) return;
+    
+    const timerContainer = this.querySelector('.timer-container');
+    const textField = timerContainer.querySelector('kev-textfield');
+    
+    if (!textField) {
+      this.cancelTimerEdit();
+      return;
+    }
+    
+    const inputValue = textField.value.trim();
+    
+    if (inputValue) {
+      // Parse input: MM:SS or just seconds
+      let totalSeconds = 0;
+      
+      if (inputValue.includes(':')) {
+        // MM:SS format
+        const parts = inputValue.split(':');
+        const mins = parseInt(parts[0], 10) || 0;
+        const secs = parseInt(parts[1], 10) || 0;
+        totalSeconds = mins * 60 + secs;
+      } else {
+        // Just seconds
+        totalSeconds = parseInt(inputValue, 10) || 0;
+      }
+      
+      // Convert to milliseconds and update
+      if (totalSeconds > 0) {
+        this.timeRemaining = totalSeconds * 1000;
+        this.updateTimerDisplay();
+      }
+    }
+    
+    // Restore timer display
+    this.cancelTimerEdit();
+  }
+
+  cancelTimerEdit() {
+    if (!this.isEditing) return;
+    
+    this.isEditing = false;
+    const timerContainer = this.querySelector('.timer-container');
+    
+    // Restore timer display
+    timerContainer.innerHTML = `
+      <h3 class="text-h3 timer">${this.formatTime(this.timeRemaining)}</h3>
+    `;
+    
+    // Re-setup edit functionality if needed
+    this.setupTimerEdit();
+    // Restore timer container styling
+    this.updateTimerContainer('white');
   }
 
   startTimer() {
@@ -221,6 +361,8 @@ class PlayerInfo extends HTMLElement {
     this.stopTimer();
     this.timeRemaining = 600000; // Reset to initial time (10 minutes in milliseconds)
     this.gameResult = null;
+    this.gameHasStarted = false;
+    this.isEditing = false;
     
     this.updateTimerDisplay();
     
@@ -228,6 +370,8 @@ class PlayerInfo extends HTMLElement {
     this.updateBorderColor('white');
     // Reset timer container styling
     this.updateTimerContainer('white');
+    // Re-setup edit functionality
+    this.setupTimerEdit();
   }
 
   disconnectedCallback() {
