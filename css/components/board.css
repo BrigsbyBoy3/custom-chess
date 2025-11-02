@@ -9,6 +9,6 @@
   grid-template-rows: repeat(8, 1fr);
   width: 100%;
   aspect-ratio: 1;
-  border: .5rem solid var(--dark);
+  border: .25rem solid var(--dark);
 }
 

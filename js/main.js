@@ -30,6 +30,7 @@ let legalMoves = [];
 let lastMove = null; // Track last move for en passant
 let gameOver = false;
 let gameResult = null; // 'checkmate', 'stalemate', or null
+let moveCount = 0; // Track number of moves made
 
 /**
  * Initialize the chess board with starting positions
@@ -51,6 +52,7 @@ function initializeBoard() {
   lastMove = null;
   gameOver = false;
   gameResult = null;
+  moveCount = 0;
 }
 
 /**
@@ -165,7 +167,9 @@ function handleSquareClick(row, col) {
       makeMove(selectedSquare.row, selectedSquare.col, row, col);
       selectedSquare = null;
       legalMoves = [];
+      renderBoard();
       updateGameInfo();
+      return; // Exit early to avoid rendering twice
     } else if (piece && piece.color === currentPlayer) {
       // Select a different piece of the same color
       selectedSquare = { row, col };
@@ -575,6 +579,10 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
   const piece = board[fromRow][fromCol];
   const move = legalMoves.find(m => m.row === toRow && m.col === toCol);
   
+  // Check for captures
+  const capturedPiece = board[toRow][toCol];
+  let enPassantCapture = null;
+  
   // Handle castling
   if (move && move.isCastling) {
     // Move king
@@ -591,6 +599,7 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     rook.hasMoved = true;
   } else if (move && move.isEnPassant) {
     // En passant capture
+    enPassantCapture = board[fromRow][toCol];
     board[toRow][toCol] = piece;
     board[fromRow][fromCol] = null;
     piece.hasMoved = true;
@@ -609,6 +618,25 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     }
   }
 
+  // Dispatch capture event if a piece was captured
+  if (capturedPiece) {
+    const pieceUnicode = PIECES[capturedPiece.color][capturedPiece.type];
+    window.dispatchEvent(new CustomEvent('pieceCaptured', {
+      detail: {
+        piece: pieceUnicode,
+        capturedBy: currentPlayer // The current player (before switch) captured this piece
+      }
+    }));
+  } else if (enPassantCapture) {
+    const pieceUnicode = PIECES[enPassantCapture.color][enPassantCapture.type];
+    window.dispatchEvent(new CustomEvent('pieceCaptured', {
+      detail: {
+        piece: pieceUnicode,
+        capturedBy: currentPlayer
+      }
+    }));
+  }
+
   // Track last move for en passant
   lastMove = {
     piece: piece,
@@ -618,8 +646,19 @@ function makeMove(fromRow, fromCol, toRow, toCol) {
     toCol: toCol
   };
 
+  // Increment move count
+  moveCount++;
+  
   // Switch players
   currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+  
+  // Dispatch turn change event
+  // Start timers: white's timer starts after the first move, black's on their first turn
+  window.dispatchEvent(new CustomEvent('turnChange', {
+    detail: {
+      currentPlayer: currentPlayer
+    }
+  }));
   
   // Check for checkmate or stalemate
   if (isCheckmate(currentPlayer)) {
@@ -655,6 +694,9 @@ function updateGameInfo() {
 function resetGame() {
   initializeBoard();
   renderBoard();
+  
+  // Dispatch game reset event
+  window.dispatchEvent(new CustomEvent('gameReset'));
 }
 
 /**
