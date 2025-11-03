@@ -5,7 +5,7 @@
 
 const THEME_ICONS = {
   light: '⏾',
-  dark: '❂'
+  dark: '⛭'
 };
 
 /**

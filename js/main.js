@@ -1205,6 +1205,33 @@ function stopPlayerTimer(player) {
 }
 
 /**
+ * Get the flip board icon based on theme and board orientation
+ * ⬒: (light theme + white on bottom) OR (dark theme + black on bottom)
+ * ⬓: (light theme + black on bottom) OR (dark theme + white on bottom)
+ */
+function getFlipBoardIcon() {
+  const isDarkTheme = document.documentElement.hasAttribute('data-theme');
+  const isWhiteOnBottom = !gameState.boardFlipped;
+  
+  // ⬒ cases: light theme with white on bottom, OR dark theme with black on bottom
+  if ((!isDarkTheme && isWhiteOnBottom) || (isDarkTheme && !isWhiteOnBottom)) {
+    return '⬒';
+  }
+  // ⬓ cases: light theme with black on bottom, OR dark theme with white on bottom
+  return '⬓';
+}
+
+/**
+ * Update the flip board button icon
+ */
+function updateFlipBoardIcon() {
+  const flipBoardBtn = document.getElementById('flip-board');
+  if (flipBoardBtn) {
+    flipBoardBtn.textContent = getFlipBoardIcon();
+  }
+}
+
+/**
  * Dispatch unified game state update to all components
  */
 function dispatchGameStateUpdate() {
@@ -1339,11 +1366,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Flip board button - toggle board orientation (black perspective)
   const flipBoardBtn = document.getElementById('flip-board');
   if (flipBoardBtn) {
+    // Set initial icon
+    updateFlipBoardIcon();
+    
     flipBoardBtn.addEventListener('click', () => {
       gameState.boardFlipped = !gameState.boardFlipped;
       renderBoard();
+      // Update icon to reflect new orientation
+      updateFlipBoardIcon();
       // Re-sync all components after flip
       dispatchGameStateUpdate();
+    });
+    
+    // Listen for theme changes to update icon
+    document.addEventListener('themechange', () => {
+      updateFlipBoardIcon();
     });
   }
   
