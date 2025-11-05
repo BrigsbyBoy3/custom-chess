@@ -178,9 +178,19 @@ function reconstructBoardFromMoveHistory() {
   
   // Apply each move in sequence
   for (const move of gameState.moveHistory) {
-    const { fromRow, fromCol, toRow, toCol, piece, isCastling, isEnPassant, promotedPiece } = move;
+    const { fromRow, fromCol, toRow, toCol, piece, isCastling, isEnPassant, promotedPiece, isCapture } = move;
     const pieceObj = gameState.board[fromRow][fromCol];
     if (!pieceObj) continue;
+    
+    // Track captured piece BEFORE making the move
+    let capturedPiece = null;
+    if (isEnPassant) {
+      // For en passant, captured piece is on the same row, different column
+      capturedPiece = gameState.board[fromRow][toCol];
+    } else if (isCapture && !isCastling) {
+      // For normal captures, captured piece is at destination
+      capturedPiece = gameState.board[toRow][toCol];
+    }
     
     if (isCastling) {
       gameState.board[toRow][toCol] = pieceObj;
@@ -200,7 +210,7 @@ function reconstructBoardFromMoveHistory() {
       gameState.board[toRow][toCol] = pieceObj;
       gameState.board[fromRow][fromCol] = null;
       pieceObj.hasMoved = true;
-      gameState.board[fromRow][toCol] = null;
+      gameState.board[fromRow][toCol] = null; // Remove captured pawn
       if (pieceObj.type === 'k') {
         gameState.players[pieceObj.color].castling.kingside = false;
         gameState.players[pieceObj.color].castling.queenside = false;
@@ -220,6 +230,24 @@ function reconstructBoardFromMoveHistory() {
         if (fromCol === 7) gameState.players[pieceObj.color].castling.kingside = false;
         if (fromCol === 0) gameState.players[pieceObj.color].castling.queenside = false;
       }
+    }
+    
+    // Reconstruct captures string if a piece was captured
+    if (capturedPiece) {
+      const capturingPlayer = move.player;
+      const order = { q: 1, r: 2, b: 3, n: 4, p: 5 };
+      let currentString = gameState.players[capturingPlayer].captures || '';
+      const currentPieces = currentString.split('').filter(p => p);
+      const newPieceType = capturedPiece.type;
+      const insertIndex = currentPieces.findIndex(p => (order[p] || 6) > order[newPieceType]);
+      
+      if (insertIndex === -1) {
+        currentPieces.push(newPieceType);
+      } else {
+        currentPieces.splice(insertIndex, 0, newPieceType);
+      }
+      
+      gameState.players[capturingPlayer].captures = currentPieces.join('');
     }
     
     gameState.lastMove = { piece: pieceObj, fromRow, fromCol, toRow, toCol };
