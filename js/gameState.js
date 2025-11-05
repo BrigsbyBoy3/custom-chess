@@ -6,6 +6,7 @@
  * of the minimal state needed (move history, turn, timers).
  */
 
+
 // Unified game state - single source of truth
 const gameState = {
   // Board state
@@ -85,6 +86,8 @@ export function setStateProperty(key, value) {
  * 2. Current turn (string: 'white' | 'black')
  * 3. White's time remaining (number in milliseconds)
  * 4. Black's time remaining (number in milliseconds)
+ * 5. Game over status (boolean)
+ * 6. Game result (string or null)
  * 
  * All other state (board, castling rights, en passant, etc.) can be
  * reconstructed from move history starting from the initial position.
@@ -94,7 +97,9 @@ export function serializeForMultiplayer() {
     moveHistory: JSON.parse(JSON.stringify(gameState.moveHistory)), // Deep copy
     turn: gameState.turn,
     whiteTime: gameState.players.white.timer.timeRemaining,
-    blackTime: gameState.players.black.timer.timeRemaining
+    blackTime: gameState.players.black.timer.timeRemaining,
+    gameOver: gameState.gameOver,
+    gameResult: gameState.gameResult
   };
 }
 
@@ -111,16 +116,117 @@ export function deserializeFromMultiplayer(multiplayerState) {
     throw new Error('Invalid multiplayer state: missing required fields');
   }
   
-  // Apply move history and timers
-  // Note: This will need to be called after board initialization
-  // The actual board reconstruction should be handled by the game logic
+  // Apply move history and timers first
   gameState.moveHistory = JSON.parse(JSON.stringify(multiplayerState.moveHistory));
   gameState.turn = multiplayerState.turn;
   gameState.players.white.timer.timeRemaining = multiplayerState.whiteTime;
   gameState.players.black.timer.timeRemaining = multiplayerState.blackTime;
   
+  // Restore game over status (important for multiplayer sync)
+  gameState.gameOver = multiplayerState.gameOver || false;
+  gameState.gameResult = multiplayerState.gameResult || null;
+  
   // Mark game as started if there are moves
   gameState.gameHasStarted = multiplayerState.moveHistory.length > 0;
+  
+  // Reconstruct board from move history
+  reconstructBoardFromMoveHistory();
+  
+  // If game is over, dispatch game end event so UI updates
+  if (gameState.gameOver && gameState.gameResult) {
+    // Determine winner if checkmate
+    let winner = null;
+    if (gameState.gameResult === 'checkmate') {
+      // Winner is the player whose turn it is NOT (the one who delivered checkmate)
+      winner = gameState.turn === 'white' ? 'black' : 'white';
+    } else if (gameState.gameResult === 'timeout') {
+      // Winner is the player whose turn it is (the one who didn't run out of time)
+      winner = gameState.turn;
+    }
+    // For stalemate, repetition - winner is null (draw)
+    
+    window.dispatchEvent(new CustomEvent('gameEnd', {
+      detail: {
+        result: gameState.gameResult,
+        winner: winner
+      }
+    }));
+  }
+}
+
+/**
+ * Reconstruct board from move history (simplified - just applies moves without events)
+ */
+function reconstructBoardFromMoveHistory() {
+  // Reset board to starting position
+  gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
+  gameState.board[0] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'].map(p => ({ type: p, color: 'black', hasMoved: false }));
+  gameState.board[1] = Array(8).fill(null).map(() => ({ type: 'p', color: 'black', hasMoved: false }));
+  gameState.board[6] = Array(8).fill(null).map(() => ({ type: 'p', color: 'white', hasMoved: false }));
+  gameState.board[7] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'].map(p => ({ type: p, color: 'white', hasMoved: false }));
+  
+  // Reset derived state
+  gameState.selectedSquare = null;
+  gameState.legalMoves = [];
+  gameState.lastMove = null;
+  gameState.moveCount = 0;
+  gameState.positionHistory = [];
+  gameState.players.white.captures = '';
+  gameState.players.black.captures = '';
+  gameState.players.white.castling = { kingside: true, queenside: true };
+  gameState.players.black.castling = { kingside: true, queenside: true };
+  
+  // Apply each move in sequence
+  for (const move of gameState.moveHistory) {
+    const { fromRow, fromCol, toRow, toCol, piece, isCastling, isEnPassant, promotedPiece } = move;
+    const pieceObj = gameState.board[fromRow][fromCol];
+    if (!pieceObj) continue;
+    
+    if (isCastling) {
+      gameState.board[toRow][toCol] = pieceObj;
+      gameState.board[fromRow][fromCol] = null;
+      pieceObj.hasMoved = true;
+      const rookFromCol = toCol === 6 ? 7 : 0;
+      const rookToCol = toCol === 6 ? 5 : 3;
+      const rook = gameState.board[fromRow][rookFromCol];
+      if (rook) {
+        gameState.board[fromRow][rookToCol] = rook;
+        gameState.board[fromRow][rookFromCol] = null;
+        rook.hasMoved = true;
+      }
+      gameState.players[piece.color].castling.kingside = false;
+      gameState.players[piece.color].castling.queenside = false;
+    } else if (isEnPassant) {
+      gameState.board[toRow][toCol] = pieceObj;
+      gameState.board[fromRow][fromCol] = null;
+      pieceObj.hasMoved = true;
+      gameState.board[fromRow][toCol] = null;
+      if (pieceObj.type === 'k') {
+        gameState.players[pieceObj.color].castling.kingside = false;
+        gameState.players[pieceObj.color].castling.queenside = false;
+      } else if (pieceObj.type === 'r') {
+        if (fromCol === 7) gameState.players[pieceObj.color].castling.kingside = false;
+        if (fromCol === 0) gameState.players[pieceObj.color].castling.queenside = false;
+      }
+    } else {
+      gameState.board[toRow][toCol] = pieceObj;
+      gameState.board[fromRow][fromCol] = null;
+      pieceObj.hasMoved = true;
+      if (promotedPiece) pieceObj.type = promotedPiece;
+      if (pieceObj.type === 'k') {
+        gameState.players[pieceObj.color].castling.kingside = false;
+        gameState.players[pieceObj.color].castling.queenside = false;
+      } else if (pieceObj.type === 'r') {
+        if (fromCol === 7) gameState.players[pieceObj.color].castling.kingside = false;
+        if (fromCol === 0) gameState.players[pieceObj.color].castling.queenside = false;
+      }
+    }
+    
+    gameState.lastMove = { piece: pieceObj, fromRow, fromCol, toRow, toCol };
+    gameState.moveCount = move.moveNumber;
+  }
+  
+  // Turn is already set correctly by deserializeFromMultiplayer before this function is called
 }
 
 /**

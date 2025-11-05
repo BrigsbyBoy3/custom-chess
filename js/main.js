@@ -10,6 +10,7 @@ import { renderBoard, isBoardFlipped, toggleBoardFlip } from './boardRenderer.js
 import { stopAllTimers } from './timer.js';
 import { hasInsufficientMaterial } from './gameRules.js';
 import { dispatchGameStateUpdate } from './events.js';
+import { enableMultiplayer, disableMultiplayer, broadcastGameState, isMultiplayerActive } from './multiplayer.js';
 
 /**
  * Handle square click
@@ -38,6 +39,10 @@ function handleSquareClick(row, col) {
       // Use requestAnimationFrame to ensure all state updates and DOM operations complete
       requestAnimationFrame(() => {
         renderBoard();
+        // Broadcast game state to other tabs if multiplayer is enabled
+        if (isMultiplayerActive()) {
+          broadcastGameState();
+        }
       });
       return; // Exit early to avoid rendering twice
     } else if (piece && piece.color === gameState.turn) {
@@ -224,10 +229,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     handleTimeUp(e.detail.player);
   });
 
-  // Expose multiplayer serialization functions to window for potential future use
+  // Expose multiplayer functions to window for testing
   window.chessGame = {
     serializeForMultiplayer,
     deserializeFromMultiplayer,
-    getGameState
+    getGameState,
+    // Multiplayer controls
+    enableMultiplayer,
+    disableMultiplayer,
+    broadcastGameState,
+    isMultiplayerActive
   };
+  
+  // Enable multiplayer by default (can be disabled via console)
+  enableMultiplayer();
 });
