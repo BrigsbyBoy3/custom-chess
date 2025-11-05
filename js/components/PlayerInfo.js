@@ -412,8 +412,8 @@ class PlayerInfo extends HTMLElement {
 
   /**
    * Update captures display - converts piece types to Unicode based on player and theme
-   * White captures: light mode = black pieces (solid), dark mode = white pieces (outline)
-   * Black captures: light mode = white pieces (outline), dark mode = black pieces (solid)
+   * White captures: light mode = solid, dark mode = outlined
+   * Black captures: light mode = outlined, dark mode = solid
    */
   updateCapturesDisplay(capturesString) {
     const capturesDisplay = this.querySelector('.captures-display');
@@ -423,21 +423,21 @@ class PlayerInfo extends HTMLElement {
     const isDarkTheme = document.documentElement.hasAttribute('data-theme');
     
     // Map piece types to Unicode based on player and theme
-    // White player: light mode = solid (black pieces), dark mode = outline (white pieces)
-    // Black player: light mode = outline (white pieces), dark mode = solid (black pieces)
+    // White player: light mode = solid, dark mode = outlined
+    // Black player: light mode = outlined, dark mode = solid
     const PIECES = {
-      white: { k: '♔\uFE0E', q: '♕\uFE0E', r: '♖\uFE0E', b: '♗\uFE0E', n: '♘\uFE0E', p: '♙\uFE0E' },
-      black: { k: '♚\uFE0E', q: '♛\uFE0E', r: '♜\uFE0E', b: '♝\uFE0E', n: '♞\uFE0E', p: '♟\uFE0E' }
+      outlined: { k: '♔\uFE0E', q: '♕\uFE0E', r: '♖\uFE0E', b: '♗\uFE0E', n: '♘\uFE0E', p: '♙\uFE0E' },
+      solid: { k: '♚\uFE0E', q: '♛\uFE0E', r: '♜\uFE0E', b: '♝\uFE0E', n: '♞\uFE0E', p: '♟\uFE0E' }
     };
     
     let useSolid;
     if (player === 'white') {
-      useSolid = !isDarkTheme; // Light mode: solid (black pieces), dark mode: outline (white pieces)
+      useSolid = !isDarkTheme; // Light mode: solid, dark mode: outlined
     } else {
-      useSolid = isDarkTheme; // Light mode: outline (white pieces), dark mode: solid (black pieces)
+      useSolid = isDarkTheme; // Light mode: outlined, dark mode: solid
     }
     
-    const displaySet = useSolid ? PIECES.black : PIECES.white;
+    const displaySet = useSolid ? PIECES.solid : PIECES.outlined;
     
     // Convert piece types to Unicode characters
     const unicodeString = capturesString.split('').map(type => displaySet[type] || '').join('');
