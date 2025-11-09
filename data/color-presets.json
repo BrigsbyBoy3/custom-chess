@@ -113,5 +113,10 @@
         "name": "Matrix",
         "light": "#00ff41",
         "dark": "#0D0208"
+    },
+    {
+        "name": "Zohran",
+        "light": "#FFAC00",
+        "dark": "#2719D2"
     }
 ]

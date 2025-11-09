@@ -10,7 +10,7 @@ import { renderBoard, isBoardFlipped, toggleBoardFlip } from './boardRenderer.js
 import { stopAllTimers } from './timer.js';
 import { hasInsufficientMaterial } from './gameRules.js';
 import { dispatchGameStateUpdate } from './events.js';
-import { enableMultiplayer, disableMultiplayer, broadcastGameState, isMultiplayerActive } from './multiplayer.js';
+import { enableMultiplayer, disableMultiplayer, broadcastGameState, isMultiplayerActive, getPlayerColor, setPlayerColor, canMakeMove } from './multiplayer.js';
 
 /**
  * Handle square click
@@ -23,6 +23,11 @@ function handleSquareClick(row, col) {
   }
   
   const piece = gameState.board[row][col];
+  
+  // In multiplayer, only allow moves if it's this player's turn
+  if (isMultiplayerActive() && !canMakeMove()) {
+    return; // Not this player's turn - ignore click
+  }
 
   // If a square is already selected
   if (gameState.selectedSquare) {
@@ -238,7 +243,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     enableMultiplayer,
     disableMultiplayer,
     broadcastGameState,
-    isMultiplayerActive
+    isMultiplayerActive,
+    // Player assignment
+    getPlayerColor,
+    setPlayerColor,
+    canMakeMove
   };
   
   // Enable multiplayer by default (can be disabled via console)
