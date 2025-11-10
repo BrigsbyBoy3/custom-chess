@@ -40,9 +40,19 @@ class MoveHistory extends HTMLElement {
     // Listen for centralized game state updates
     window.addEventListener('gameStateUpdate', (e) => {
       // Sync move history from centralized state
-      // Note: We still listen to moveMade for immediate updates, but this ensures sync
-      // The moveMade event will update this.moves immediately, so we don't need to duplicate here
-      // But we can update gameResult from state
+      // This is especially important for multiplayer, where moves are received via state sync
+      if (e.detail.moveHistory) {
+        // Rebuild moves array from centralized state
+        // Always sync to ensure consistency (especially important for multiplayer)
+        const newMoves = JSON.parse(JSON.stringify(e.detail.moveHistory)); // Deep copy
+        // Only update if moves actually changed (avoid unnecessary re-renders)
+        if (JSON.stringify(newMoves) !== JSON.stringify(this.moves)) {
+          this.moves = newMoves;
+          this.updateDisplay();
+        }
+      }
+      
+      // Update gameResult from state
       if (e.detail.gameResult) {
         this.gameResult = e.detail.gameResult;
         if (e.detail.gameResult === 'checkmate') {

@@ -10,7 +10,7 @@ import { renderBoard, isBoardFlipped, toggleBoardFlip } from './boardRenderer.js
 import { stopAllTimers } from './timer.js';
 import { hasInsufficientMaterial } from './gameRules.js';
 import { dispatchGameStateUpdate } from './events.js';
-import { enableMultiplayer, disableMultiplayer, broadcastGameState, isMultiplayerActive, getPlayerColor, setPlayerColor, canMakeMove } from './multiplayer.js';
+import { enableMultiplayer, disableMultiplayer, broadcastGameState, isMultiplayerActive, getPlayerColor, setPlayerColor, canMakeMove, openPlayerSelectionModal } from './multiplayer.js';
 
 /**
  * Handle square click
@@ -25,8 +25,13 @@ function handleSquareClick(row, col) {
   const piece = gameState.board[row][col];
   
   // In multiplayer, only allow moves if it's this player's turn
-  if (isMultiplayerActive() && !canMakeMove()) {
-    return; // Not this player's turn - ignore click
+  if (isMultiplayerActive()) {
+    if (!canMakeMove()) {
+      const playerColor = getPlayerColor();
+      const gameState = getGameState();
+      console.log(`Move blocked - Player: ${playerColor}, Turn: ${gameState.turn}, Game over: ${gameState.gameOver}`);
+      return; // Not this player's turn - ignore click
+    }
   }
 
   // If a square is already selected
@@ -164,6 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSavedTheme();
   loadSavedColors();
   
+  // Initialize board (will be overridden by multiplayer state if available)
   initializeBoard();
   renderBoard();
   
@@ -196,6 +202,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderBoard();
     dispatchGameStateUpdate();
     window.dispatchEvent(new CustomEvent('gameReset'));
+    
+    // Show player selection modal in multiplayer
+    if (isMultiplayerActive()) {
+      openPlayerSelectionModal();
+    }
   });
   
   // Theme toggle button

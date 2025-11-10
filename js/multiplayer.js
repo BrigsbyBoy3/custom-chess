@@ -29,7 +29,15 @@ export function enableMultiplayer(playerColor = null) {
     localPlayerColor = playerColor;
     sessionStorage.setItem('chess-player-color', playerColor);
   } else {
-    localPlayerColor = assignPlayerColor();
+    // Check if we already have a stored color
+    const storedColor = sessionStorage.getItem('chess-player-color');
+    if (storedColor === 'white' || storedColor === 'black') {
+      localPlayerColor = storedColor;
+    } else {
+      // Default to white if no color assigned
+      localPlayerColor = 'white';
+      sessionStorage.setItem('chess-player-color', 'white');
+    }
   }
   
   // Create BroadcastChannel for tab-to-tab communication
@@ -40,51 +48,84 @@ export function enableMultiplayer(playerColor = null) {
   broadcastChannel.addEventListener('message', (event) => {
     const { type, data } = event.data;
     
-    if (type === 'gameState') {
+    if (type === 'requestState') {
+      // Another tab is requesting current game state (e.g., after refresh)
+      // Send our current state
+      const state = serializeForMultiplayer();
+      broadcastChannel.postMessage({
+        type: 'gameState',
+        data: state
+      });
+    } else if (type === 'gameState') {
       // Receive game state from another tab
-      try {
-        // Stop all timers before deserializing (to avoid conflicts)
-        stopAllTimers();
-        
-        deserializeFromMultiplayer(data);
-        
-        // Sync timers after deserializing
-        const gameState = getGameState();
-        if (!gameState.gameOver && gameState.gameHasStarted) {
-          // Start the timer for the current player (whose turn it is)
-          startPlayerTimer(gameState.turn);
+      (async () => {
+        try {
+          // Stop all timers before deserializing (to avoid conflicts)
+          stopAllTimers();
+          
+          // Make sure player color is set before deserializing
+          if (!localPlayerColor) {
+            const storedColor = sessionStorage.getItem('chess-player-color');
+            if (storedColor === 'white' || storedColor === 'black') {
+              localPlayerColor = storedColor;
+            } else {
+              // Default to white if no color assigned
+              localPlayerColor = 'white';
+              sessionStorage.setItem('chess-player-color', 'white');
+            }
+          }
+          
+          await deserializeFromMultiplayer(data);
+          
+          // Sync timers after deserializing
+          const gameState = getGameState();
+          if (!gameState.gameOver && gameState.gameHasStarted) {
+            // Start the timer for the current player (whose turn it is)
+            startPlayerTimer(gameState.turn);
+          }
+          
+          renderBoard();
+          dispatchGameStateUpdate();
+          console.log('Received game state from another tab');
+          console.log(`Current player: ${localPlayerColor}, Turn: ${gameState.turn}, Can move: ${canMakeMove()}`);
+        } catch (error) {
+          console.error('Error deserializing game state:', error);
         }
-        
-        renderBoard();
-        dispatchGameStateUpdate();
-        console.log('Received game state from another tab');
-      } catch (error) {
-        console.error('Error deserializing game state:', error);
-      }
+      })();
     }
   });
   
   console.log(`Multiplayer enabled - you are playing as ${localPlayerColor}`);
+  
+  // Request current game state from other tabs on initial connection
+  // This helps sync state when a tab refreshes
+  // Send a request message - other tabs will respond with their current state
+  setTimeout(() => {
+    if (broadcastChannel) {
+      broadcastChannel.postMessage({
+        type: 'requestState'
+      });
+    }
+  }, 100);
 }
 
 /**
- * Auto-assign player color (simple: first connection gets white, second gets black)
- * Uses sessionStorage to coordinate between tabs
+ * Show player selection modal
  */
-function assignPlayerColor() {
-  // Check if we already have a stored color
-  const storedColor = sessionStorage.getItem('chess-player-color');
-  if (storedColor === 'white' || storedColor === 'black') {
-    return storedColor;
+function showPlayerSelectionModal() {
+  const modal = document.getElementById('playerSelectionModal');
+  if (modal) {
+    modal.open();
   }
-  
-  // Default: first player is white
-  const assignedColor = 'white';
-  sessionStorage.setItem('chess-player-color', assignedColor);
-  console.log(`Auto-assigned player color: ${assignedColor}`);
-  console.log('If you are the second player, call: window.chessGame.setPlayerColor("black")');
-  return assignedColor;
 }
+
+/**
+ * Show player selection modal (exported for manual use)
+ */
+export function openPlayerSelectionModal() {
+  showPlayerSelectionModal();
+}
+
 
 /**
  * Set which player this browser controls
@@ -98,6 +139,10 @@ export function setPlayerColor(color) {
   localPlayerColor = color;
   sessionStorage.setItem('chess-player-color', color);
   console.log(`Player color set to: ${color}`);
+  
+  // Log current game state for debugging
+  const gameState = getGameState();
+  console.log(`Current turn: ${gameState.turn}, Game over: ${gameState.gameOver}, Can move: ${canMakeMove()}`);
 }
 
 /**
@@ -123,7 +168,17 @@ export function isMyTurn() {
  * @returns {boolean}
  */
 export function canMakeMove() {
-  if (!localPlayerColor) return false;
+  // Make sure player color is set (restore from sessionStorage if needed)
+  if (!localPlayerColor) {
+    const storedColor = sessionStorage.getItem('chess-player-color');
+    if (storedColor === 'white' || storedColor === 'black') {
+      localPlayerColor = storedColor;
+    } else {
+      // No color assigned - can't make moves
+      return false;
+    }
+  }
+  
   const gameState = getGameState();
   return !gameState.gameOver && gameState.turn === localPlayerColor;
 }

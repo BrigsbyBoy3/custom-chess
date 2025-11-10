@@ -107,7 +107,7 @@ export function serializeForMultiplayer() {
  * Deserialize multiplayer state and apply it to game state
  * This will reconstruct the board and all derived state from move history
  */
-export function deserializeFromMultiplayer(multiplayerState) {
+export async function deserializeFromMultiplayer(multiplayerState) {
   // Validate required fields
   if (!multiplayerState.moveHistory || 
       !multiplayerState.turn || 
@@ -130,7 +130,7 @@ export function deserializeFromMultiplayer(multiplayerState) {
   gameState.gameHasStarted = multiplayerState.moveHistory.length > 0;
   
   // Reconstruct board from move history
-  reconstructBoardFromMoveHistory();
+  await reconstructBoardFromMoveHistory();
   
   // If game is over, dispatch game end event so UI updates
   if (gameState.gameOver && gameState.gameResult) {
@@ -156,8 +156,9 @@ export function deserializeFromMultiplayer(multiplayerState) {
 
 /**
  * Reconstruct board from move history (simplified - just applies moves without events)
+ * This function rebuilds the board and position history from move history
  */
-function reconstructBoardFromMoveHistory() {
+async function reconstructBoardFromMoveHistory() {
   // Reset board to starting position
   gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
   gameState.board[0] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'].map(p => ({ type: p, color: 'black', hasMoved: false }));
@@ -175,6 +176,12 @@ function reconstructBoardFromMoveHistory() {
   gameState.players.black.captures = '';
   gameState.players.white.castling = { kingside: true, queenside: true };
   gameState.players.black.castling = { kingside: true, queenside: true };
+  
+  // Import getPositionSignature for rebuilding position history
+  const { getPositionSignature } = await import('./gameRules.js');
+  
+  // Save initial position (before any moves)
+  gameState.positionHistory.push(getPositionSignature());
   
   // Apply each move in sequence
   for (const move of gameState.moveHistory) {
@@ -252,6 +259,13 @@ function reconstructBoardFromMoveHistory() {
     
     gameState.lastMove = { piece: pieceObj, fromRow, fromCol, toRow, toCol };
     gameState.moveCount = move.moveNumber;
+    
+    // Rebuild position history after each move (needed for repetition detection)
+    // Temporarily set turn to the player who just moved to get correct signature
+    const tempTurn = gameState.turn;
+    gameState.turn = move.player === 'white' ? 'black' : 'white'; // Turn after move
+    gameState.positionHistory.push(getPositionSignature());
+    gameState.turn = tempTurn; // Restore correct turn
   }
   
   // Turn is already set correctly by deserializeFromMultiplayer before this function is called
